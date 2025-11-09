@@ -58,6 +58,7 @@
         .payslip-footer { border-top: 1px solid #ddd; padding: 1rem; text-align: center; font-size: 0.8rem; }
         /* make audit table scrollable on small screens */
         #audit .table { max-height: 60vh; overflow-y: auto; display: block; }
+        #pdfCanvas { max-width: 100%; height: auto; }
     </style>
 </head>
 <body>
@@ -110,6 +111,7 @@
                 <li class="employee-only"><a href="#myDashboard" class="nav-link" onclick="showSection('myDashboard')"><i class="fas fa-tachometer-alt me-2"></i><span class="nav-text">My Dashboard</span></a></li>
                 <li class="admin-only"><a href="#employees" class="nav-link" onclick="showSection('employees')"><i class="fas fa-user-friends me-2"></i><span class="nav-text">Employees (HR Core)</span></a></li>
                 <li class="employee-only"><a href="#myProfile" class="nav-link" onclick="showSection('myProfile')"><i class="fas fa-user me-2"></i><span class="nav-text">My Profile</span></a></li>
+                <li class="employee-only"><a href="#handbook" class="nav-link" onclick="showSection('handbook')"><i class="fas fa-book me-2"></i><span class="nav-text">Employee Handbook</span></a></li>
                 <li class="admin-only"><a href="#payroll" class="nav-link" onclick="showSection('payroll')"><i class="fas fa-money-check-alt me-2"></i><span class="nav-text">Payroll</span></a></li>
                 <li class="employee-only"><a href="#myPayroll" class="nav-link" onclick="showSection('myPayroll')"><i class="fas fa-money-bill-wave me-2"></i><span class="nav-text">My Payslips</span></a></li>
                 <li class="admin-only"><a href="#recruitment" class="nav-link" onclick="showSection('recruitment')"><i class="fas fa-briefcase me-2"></i><span class="nav-text">iRecruit</span></a></li>
@@ -168,6 +170,13 @@
                     <thead><tr><th>ID</th><th>Name</th><th>Position</th><th>Branch</th><th>Salary</th><th>Tax #</th><th>UIF #</th><th>Actions</th></tr></thead>
                     <tbody id="employeeTable"></tbody>
                 </table>
+            </section>
+
+            <!-- Handbook Section -->
+            <section id="handbook" class="section d-none">
+                <h2>Employee Handbook</h2>
+                <div id="handbookViewer" class="mb-3"></div>
+                <button class="btn btn-primary admin-only" onclick="showUploadHandbookModal()">Upload New Handbook</button>
             </section>
 
             <!-- Payroll Section with Payslip Generation -->
@@ -466,6 +475,25 @@
                 </div>
             </div>
 
+            <!-- Upload Handbook Modal -->
+            <div class="modal fade" id="uploadHandbookModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Upload Employee Handbook</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="file" id="handbookFile" accept=".pdf" class="form-control">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="uploadHandbook()">Upload</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Add/Edit Employee Modal -->
             <div class="modal fade" id="addEmployeeModal">
                 <div class="modal-dialog modal-lg">
@@ -688,6 +716,7 @@
 
         // === DATA ===
         let employees = JSON.parse(localStorage.getItem('employees')) || [];
+        let handbook = localStorage.getItem('handbook') || '';
         let payrolls = JSON.parse(localStorage.getItem('payrolls')) || [];
         let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
         let reviews = JSON.parse(localStorage.getItem('reviews')) || [];
@@ -813,6 +842,7 @@
             if (user.role === 'admin') renderAudit();
             document.getElementById('profilePicUpload').addEventListener('change', uploadProfilePic);
             populateOnboardingSelects();
+            if (user.role === 'employee') renderHandbook();
         }
 
         function populateSelects() {
@@ -870,6 +900,7 @@
             if (id === 'myDashboard') renderMyDashboard();
             if (id === 'employees') renderEmployees();
             if (id === 'myProfile') renderMyProfile();
+            if (id === 'handbook') renderHandbook();
             if (id === 'payroll') renderPayroll();
             if (id === 'myPayroll') renderMyPayroll();
             if (id === 'recruitment') renderRecruitment();
@@ -886,6 +917,75 @@
             if (id === 'settings') {} // No dynamic render needed
             if (id === 'audit') renderAudit();
             if (id === 'mediaApproval') renderMediaApproval();
+        }
+
+        // === HANDBOOK ===
+        function showUploadHandbookModal() {
+            document.getElementById('handbookFile').value = '';
+            const modal = new bootstrap.Modal(document.getElementById('uploadHandbookModal'));
+            modal.show();
+        }
+
+        function uploadHandbook() {
+            const file = document.getElementById('handbookFile').files[0];
+            if (!file || !file.type === 'application/pdf') {
+                alert('Please select a PDF file.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                localStorage.setItem('handbook', e.target.result);
+                handbook = e.target.result;
+                renderHandbook();
+                addNotification('admin', 'Employee handbook uploaded successfully.');
+                bootstrap.Modal.getInstance(document.getElementById('uploadHandbookModal')).hide();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function downloadHandbook() {
+            if (handbook) {
+                const a = document.createElement('a');
+                a.href = handbook;
+                a.download = 'employee-handbook.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        }
+
+        function renderHandbook() {
+            const viewer = document.getElementById('handbookViewer');
+            if (!handbook) {
+                viewer.innerHTML = '<p>No handbook uploaded yet. Please contact HR.</p>';
+                return;
+            }
+            viewer.innerHTML = `
+                <p>Preview of the first page:</p>
+                <canvas id="pdfCanvas"></canvas>
+                <div class="mt-2">
+                    <button class="btn btn-info" onclick="downloadHandbook()">Download Full PDF</button>
+                </div>
+            `;
+            const loadingTask = pdfjsLib.getDocument(handbook);
+            loadingTask.promise.then(function(pdf) {
+                pdf.getPage(1).then(function(page) {
+                    const scale = 1.5;
+                    const viewport = page.getViewport({scale: scale});
+                    const canvas = document.getElementById('pdfCanvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    page.render(renderContext);
+                });
+            }).catch(function(error) {
+                console.error('Error rendering PDF:', error);
+                viewer.innerHTML += '<p>Error loading PDF preview.</p>';
+            });
         }
 
         // === DASHBOARD ===
