@@ -1519,6 +1519,10 @@
         let pulseResponses = JSON.parse(localStorage.getItem('pulseResponses')) || [];
         let weeklyCheckins = JSON.parse(localStorage.getItem('weeklyCheckins')) || [];
         let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        
+        // Configurable constants for HRMS policies
+        const ANNUAL_PTO_DAYS = 14; // Annual PTO allocation
+        const FLIGHT_RISK_WEIGHTS = { performance: 20, wellness: 5, pulse: 15 }; // Flight risk calculation weights
 
         function hashPassword(pwd) {
             return CryptoJS.SHA256(pwd).toString();
@@ -3792,7 +3796,12 @@
             const container = document.getElementById('chatbotMessages');
             const div = document.createElement('div');
             div.className = `chatbot-message ${type}`;
-            div.innerHTML = text;
+            // Sanitize user input to prevent XSS, but allow HTML for bot responses
+            if (type === 'user') {
+                div.textContent = text;
+            } else {
+                div.innerHTML = text;
+            }
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
             
@@ -3810,7 +3819,7 @@
                 const myLeaves = leaves.filter(l => l.employeeIndex === currentUser?.index);
                 const approved = myLeaves.filter(l => l.status === 'Approved').length;
                 const pending = myLeaves.filter(l => l.status === 'Pending').length;
-                const ptoBalance = 14 - approved; // Assuming 14 days annual
+                const ptoBalance = ANNUAL_PTO_DAYS - approved;
                 return `📅 <strong>Your Leave Balance:</strong><br>
                     • PTO Days Remaining: <strong>${ptoBalance}</strong><br>
                     • Approved Leaves: ${approved}<br>
@@ -3916,7 +3925,8 @@
             kudos.push(newKudos);
             localStorage.setItem('kudos', JSON.stringify(kudos));
             
-            addNotification(recipientIndex, `You received kudos from ${employees[currentUser.index].name}! 🎉`);
+            const senderName = employees[currentUser.index]?.name || 'A colleague';
+            addNotification(recipientIndex, `You received kudos from ${senderName}! 🎉`);
             
             bootstrap.Modal.getInstance(document.getElementById('giveKudosModal')).hide();
             renderMyDashboard();
@@ -3996,8 +4006,10 @@
                 const recentPulses = pulseResponses.filter(p => p.employeeIndex === i).slice(-5);
                 const avgPulse = recentPulses.length ? recentPulses.reduce((s, p) => s + p.rating, 0) / recentPulses.length : 3;
                 
-                // Calculate risk (lower scores = higher risk)
-                let riskScore = ((5 - avgScore) * 20) + ((10 - wellness) * 5) + ((5 - avgPulse) * 15);
+                // Calculate risk using configurable weights (lower scores = higher risk)
+                let riskScore = ((5 - avgScore) * FLIGHT_RISK_WEIGHTS.performance) + 
+                               ((10 - wellness) * FLIGHT_RISK_WEIGHTS.wellness) + 
+                               ((5 - avgPulse) * FLIGHT_RISK_WEIGHTS.pulse);
                 riskScore = Math.min(100, Math.max(0, riskScore));
                 
                 let riskLevel = 'Low';
@@ -4102,7 +4114,12 @@
         function renderEnhancedDashboard() {
             if (!currentUser || currentUser.role === 'admin') return;
             
+            // Bounds checking for employee index
+            if (currentUser.index < 0 || currentUser.index >= employees.length) return;
+            
             const emp = employees[currentUser.index];
+            if (!emp) return;
+            
             const now = new Date();
             const hour = now.getHours();
             
@@ -4118,7 +4135,7 @@
             
             // Calculate PTO
             const myLeaves = leaves.filter(l => l.employeeIndex === currentUser.index && l.status === 'Approved');
-            const ptoDaysLeft = Math.max(0, 14 - myLeaves.length);
+            const ptoDaysLeft = Math.max(0, ANNUAL_PTO_DAYS - myLeaves.length);
             document.getElementById('ptoDaysLeft').textContent = ptoDaysLeft;
             
             // Kudos count
