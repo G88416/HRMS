@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Comprehensive HRMS - Allos Connect (Sage-inspired)</title>
+    <title>BCC HRMS - Staff Detail Information</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -83,7 +83,7 @@
         <div class="login-card">
             <div class="text-center mb-4">
                 <i class="fas fa-users fa-3x text-primary mb-3"></i>
-                <h3 class="login-title">HRMS - Allos Connect</h3>
+                <h3 class="login-title">BCC HRMS</h3>
                 <p class="text-muted">Sign in to access your dashboard</p>
             </div>
             <form id="loginForm" onsubmit="event.preventDefault(); login();">
@@ -119,7 +119,7 @@
         </div>
         <button class="btn btn-sm btn-primary btn-toggle-sidebar" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
         <div class="sidebar">
-            <h4 class="mb-4"><i class="fas fa-users me-2"></i><span class="nav-text">HRMS - Allos Connect</span></h4>
+            <h4 class="mb-4"><i class="fas fa-users me-2"></i><span class="nav-text">BCC HRMS</span></h4>
             <ul class="nav flex-column">
                 <li class="admin-only"><a href="#dashboard" class="nav-link active" onclick="showSection('dashboard')"><i class="fas fa-tachometer-alt me-2"></i><span class="nav-text">HR Analytics Dashboard</span></a></li>
                 <li class="employee-only"><a href="#myDashboard" class="nav-link" onclick="showSection('myDashboard')"><i class="fas fa-tachometer-alt me-2"></i><span class="nav-text">My Dashboard</span></a></li>
@@ -184,12 +184,33 @@
             </section>
             <!-- Employees Section -->
             <section id="employees" class="section d-none">
-                <h2>Employee Management (HR Core)</h2>
+                <h2>BCC Staff Detail Information</h2>
                 <button class="btn btn-primary" onclick="showAddEmployeeModal()">Add Employee</button>
-                <table class="table table-striped mt-3">
-                    <thead><tr><th>ID</th><th>Name</th><th>Position</th><th>Branch</th><th>Salary</th><th>Tax #</th><th>UIF #</th><th>Actions</th></tr></thead>
-                    <tbody id="employeeTable"></tbody>
-                </table>
+                <div class="table-responsive mt-3">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name and Surname</th>
+                                <th>Post Level</th>
+                                <th>Position</th>
+                                <th>Perm / Temp</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>ID No.</th>
+                                <th>Cell Phone No.</th>
+                                <th>Dependents</th>
+                                <th>Birthdate</th>
+                                <th>D.O.E</th>
+                                <th>Income Tax No.</th>
+                                <th>Email Address</th>
+                                <th>Bank Account No.</th>
+                                <th>Address</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTable"></tbody>
+                    </table>
+                </div>
             </section>
             <!-- Handbook Section -->
             <section id="handbook" class="section d-none">
@@ -354,13 +375,13 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="card p-3 mb-3"><strong>Email:</strong> <span id="profileEmail"></span></div>
-                        <div class="card p-3 mb-3"><strong>Phone:</strong> <span id="profilePhone"></span></div>
+                        <div class="card p-3 mb-3"><strong>Cell Phone:</strong> <span id="profilePhone"></span></div>
                         <div class="card p-3 mb-3"><strong>Salary:</strong> <span id="profileSalary"></span></div>
-                        <div class="card p-3 mb-3"><strong>Tax #:</strong> <span id="profileTax"></span></div>
-                        <div class="card p-3 mb-3"><strong>UIF #:</strong> <span id="profileUIF"></span></div>
+                        <div class="card p-3 mb-3"><strong>Income Tax No.:</strong> <span id="profileTax"></span></div>
+                        <div class="card p-3 mb-3"><strong>ID No.:</strong> <span id="profileUIF"></span></div>
                         <div class="card p-3 mb-3"><strong>Address:</strong> <span id="profileAddress"></span></div>
-                        <div class="card p-3 mb-3"><strong>Bank Details:</strong> <span id="profileBank"></span></div>
-                        <div class="card p-3 mb-3"><strong>Emergency Contact:</strong> <span id="profileEmergency"></span></div>
+                        <div class="card p-3 mb-3"><strong>Bank Account No.:</strong> <span id="profileBank"></span></div>
+                        <div class="card p-3 mb-3"><strong>Position:</strong> <span id="profileEmergency"></span></div>
                     </div>
                     <div class="col-md-6">
                         <h5>Enrolled Benefits</h5>
@@ -513,7 +534,7 @@
                         <div class="modal-body">
                             <div id="payslipPreview" class="payslip-preview">
                                 <div class="payslip-header">
-                                    <h4>Allos Connect - Payslip</h4>
+                                    <h4>BCC HRMS - Payslip</h4>
                                     <p id="payslipEmployee"></p>
                                     <p id="payslipPeriod"></p>
                                 </div>
@@ -645,19 +666,51 @@
                     <div class="modal-content">
                         <div class="modal-header"><h5 id="addEmployeeModalLabel">Add Employee</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                         <div class="modal-body">
-                            <input id="empName" placeholder="Name" class="form-control mb-3" required>
-                            <select id="empPosition" class="form-control mb-3" required><option>Producer</option><option>Editor</option><option>Marketer</option><option>Admin</option></select>
-                            <select id="empBranch" class="form-control mb-3 branch-select" required></select>
-                            <input id="empEmail" type="email" placeholder="Email" class="form-control mb-3" required>
-                            <input id="empPhone" placeholder="Phone" class="form-control mb-3" required>
-                            <input id="empSalary" type="number" placeholder="Salary" class="form-control mb-3" required>
-                            <input id="empUsername" placeholder="Username" class="form-control mb-3" required>
-                            <input id="empPassword" type="password" placeholder="Password" class="form-control mb-3" required>
-                            <input id="empTaxNumber" placeholder="Tax Number" class="form-control mb-3" required>
-                            <input id="empUIF" placeholder="UIF Number" class="form-control mb-3" required>
-                            <textarea id="empAddress" placeholder="Address" class="form-control mb-3" required></textarea>
-                            <input id="empBank" placeholder="Bank Details" class="form-control mb-3" required>
-                            <input id="empEmergency" placeholder="Emergency Contact" class="form-control mb-3" required>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input id="empName" placeholder="Name and Surname" class="form-control mb-3" required>
+                                    <select id="empPostLevel" class="form-control mb-3" required>
+                                        <option value="">Select Post Level</option>
+                                        <option>Principal</option>
+                                        <option>P0</option>
+                                        <option>P1</option>
+                                        <option>P2</option>
+                                        <option>P3</option>
+                                    </select>
+                                    <select id="empPosition" class="form-control mb-3" required>
+                                        <option value="">Select Position</option>
+                                        <option>Principal</option>
+                                        <option>Deputy Principal</option>
+                                        <option>HOD</option>
+                                        <option>Educator</option>
+                                        <option>Admin</option>
+                                    </select>
+                                    <select id="empPermTemp" class="form-control mb-3" required>
+                                        <option value="">Perm / Temp</option>
+                                        <option>Perm</option>
+                                        <option>Temp</option>
+                                    </select>
+                                    <input id="empLocation" placeholder="Location" class="form-control mb-3">
+                                    <select id="empStatus" class="form-control mb-3">
+                                        <option>Open</option>
+                                        <option>Closed</option>
+                                    </select>
+                                    <input id="empIdNo" placeholder="ID No." class="form-control mb-3" required>
+                                    <input id="empPhone" placeholder="Cell Phone No." class="form-control mb-3" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <input id="empDependents" placeholder="Dependents" class="form-control mb-3">
+                                    <input id="empBirthdate" type="text" placeholder="Birthdate (DD/MM/YYYY)" class="form-control mb-3">
+                                    <input id="empDOE" type="text" placeholder="D.O.E (Date of Employment)" class="form-control mb-3">
+                                    <input id="empTaxNumber" placeholder="Income Tax No." class="form-control mb-3">
+                                    <input id="empEmail" type="email" placeholder="Email Address" class="form-control mb-3">
+                                    <input id="empBank" placeholder="Bank Account No." class="form-control mb-3">
+                                    <textarea id="empAddress" placeholder="Address" class="form-control mb-3"></textarea>
+                                    <input id="empUsername" placeholder="Username" class="form-control mb-3" required>
+                                    <input id="empPassword" type="password" placeholder="Password" class="form-control mb-3" required>
+                                    <input id="empSalary" type="number" placeholder="Salary (for payroll)" class="form-control mb-3">
+                                </div>
+                            </div>
                         </div>
                         <div class="modal-footer"><button class="btn btn-primary" onclick="saveEmployee()">Save</button></div>
                     </div>
@@ -958,7 +1011,38 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <script>
         let currentUser = null;
-        let employees = JSON.parse(localStorage.getItem('employees')) || [];
+        
+        // Default BCC Staff Data
+        const defaultBCCStaff = [
+            { id: 1, name: 'MR LESLEY MONARENG', postLevel: 'P0', position: 'Educator', permTemp: 'Perm', location: 'Mamelodi', status: 'Open', idNo: '8205640000000', phone: '000000000', dependents: '30916', birthdate: '01/07/2013', doe: '', taxNumber: '', email: '', bankDetails: '', address: '1668 block p soshanguve 0152', username: 'lmonareng', password: '', salary: 0 },
+            { id: 2, name: 'MR SHADRECK MENDE', postLevel: 'P2', position: 'HOD', permTemp: 'Perm', location: '', status: 'Open', idNo: 'AE602605', phone: '6805317160000', dependents: '20/03/1975', birthdate: '01/01/2011', doe: '', taxNumber: '', email: 'Capitec 1538025521', bankDetails: '211 bikita zimbabwe', address: '1566 ujojo str mamelodi gardens', username: 'smende', password: '', salary: 0 },
+            { id: 3, name: 'MR SEVERINO MURINGI ZINGWE', postLevel: 'P2', position: 'HOD', permTemp: 'Perm', location: '', status: 'Open', idNo: '6312716570000', phone: '29503', dependents: '11/04/2011', birthdate: '', doe: '', taxNumber: '', email: '', bankDetails: '', address: '1566 ujojo str mamelodi gardens', username: 'szingwe', password: '', salary: 0 },
+            { id: 4, name: 'MISS MICHELLE ELIZABETH CHUMA', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '9601090806088', phone: '723213836', dependents: '35073', birthdate: '26/04/2023', doe: '', taxNumber: '', email: 'Capitec 1464220091', bankDetails: 'Ga thoka paledi 0727', address: '', username: 'mchuma', password: '', salary: 0 },
+            { id: 5, name: 'MISS BABE SEDILE MOSUWE', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '6601190702083', phone: '835573049', dependents: '24126', birthdate: '01/02/2023', doe: '', taxNumber: '', email: 'Capitec 1221063640', bankDetails: '1166 mohatjane str Britz', address: '', username: 'bmosuwe', password: '', salary: 0 },
+            { id: 6, name: 'MR MOGOTSI GODFREY MAKGALEMELA', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '5401165762084', phone: '728514908', dependents: '19740', birthdate: '20/02/2023', doe: '', taxNumber: '', email: 'tymbank 51051607595', bankDetails: '3592 moeke str mamelodi west 0101', address: '', username: 'gmakgalemela', password: '', salary: 0 },
+            { id: 7, name: 'MISS NOMZAMO NOSIPHO DONDO', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '9508160912088', phone: '722004098', dependents: '34927', birthdate: '13/Sep/2023', doe: '1904628185', taxNumber: 'nomzamonosipho517@gmail.com', email: '1882255540', bankDetails: 'nompondo area p.o box 20 hluhluwe 3960', address: '', username: 'ndondo', password: '', salary: 0 },
+            { id: 8, name: 'MR CAURAGE MAUYA', postLevel: 'P1', position: 'Educator', permTemp: 'Temp', location: '', status: 'Open', idNo: '7140250570000', phone: '34341', dependents: '15/Sep/2023', birthdate: '', doe: '', taxNumber: '', email: 'FNB 63063968673', bankDetails: '35545 masehle crescent', address: '', username: 'cmauya', password: '', salary: 0 },
+            { id: 9, name: 'MISS SANNAH BOITUMELO MALEKA', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '8706080679081', phone: '31936', dependents: '11/Oct/2023', birthdate: '', doe: '', taxNumber: '', email: 'Capitec 1267510941', bankDetails: '7436 seeping str section M west', address: '', username: 'smaleka', password: '', salary: 0 },
+            { id: 10, name: 'MR LUCKY MALULEKA', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '9911305879081', phone: '765952813', dependents: '36494', birthdate: '13/Feb', doe: '', taxNumber: '', email: 'ABSA 9265757699', bankDetails: '1720 setlhong str', address: '', username: 'lmaluleka', password: '', salary: 0 },
+            { id: 11, name: 'MR JACOB LEDWABA', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '6512200540308', phone: '824935584', dependents: '24096', birthdate: '01/02/2024', doe: '0300458149', taxNumber: '', email: 'ABSA 4083936523', bankDetails: '285 willow park manar, anmani estate', address: '', username: 'jledwaba', password: '', salary: 0 },
+            { id: 12, name: 'MISS NTHABISENG LIZBETH TSUMA', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '9302160291085', phone: '794700260', dependents: '34016', birthdate: '12/02/2024', doe: '0016753287', taxNumber: 'nthabylee16@gmail.com', email: 'SDB 101811300775', bankDetails: 'PHL 562 Tsamaya road mamelodi east', address: '', username: 'ntsuma', password: '', salary: 0 },
+            { id: 13, name: 'MISS GONTSE TSHILOANE', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '9712190985086', phone: '798171794', dependents: '35783', birthdate: '26/04/2024', doe: '0209441294', taxNumber: '', email: 'Capitec 1509612031', bankDetails: '29602 nkwe str mamelodi east 0122', address: '', username: 'gtshiloane', password: '', salary: 0 },
+            { id: 14, name: 'MRS NTOMBIFUTHI PHYLLIS NTHOLE', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '4111397081000', phone: '798265435', dependents: '36627', birthdate: '', doe: '1558091193', taxNumber: '', email: 'Capitec 1592620408', bankDetails: '16215 jakaranda', address: '', username: 'pnthole', password: '', salary: 0 },
+            { id: 15, name: 'MR DAMEON HYKES', postLevel: 'Principal', position: 'Principal', permTemp: 'Perm', location: '', status: 'Open', idNo: '8603300512708', phone: '607246159', dependents: '30/03/1986', birthdate: '07/02/2023', doe: '', taxNumber: '', email: 'Capitec 1356162965', bankDetails: '63 lammer vangere eastlynne', address: '', username: 'dhykes', password: '', salary: 0 },
+            { id: 16, name: 'DIMAKATSO MAHLANGU', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '7109050715087', phone: '789960351', dependents: '35678', birthdate: '03/2015', doe: '', taxNumber: '', email: 'NDB 1120732719', bankDetails: '', address: '', username: 'dmahlangu', password: '', salary: 0 },
+            { id: 17, name: 'MRS NAPE EUNICE MATULUDI', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '7009190518088', phone: '782747804', dependents: '25830', birthdate: '', doe: '', taxNumber: '', email: '', bankDetails: '36344 lehong street ext 22 mamelodi east 0122', address: '', username: 'ematuludi', password: '', salary: 0 },
+            { id: 18, name: 'MRS INGRID TAU', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '6805051438089', phone: '726645979', dependents: '68/05/05', birthdate: '09/09/2024', doe: '', taxNumber: '', email: 'FNB 62136257278', bankDetails: '22010 mamelodi East ikageng', address: '', username: 'itau', password: '', salary: 0 },
+            { id: 19, name: 'Surprise Sebothoma', postLevel: '', position: 'Temp', permTemp: 'Temp', location: '', status: 'Open', idNo: '', phone: '', dependents: '', birthdate: '', doe: '', taxNumber: '', email: '', bankDetails: '', address: '', username: 'ssebothoma', password: '', salary: 0 },
+            { id: 20, name: 'MR KHUTSO MOGANE', postLevel: 'P1', position: 'Educator', permTemp: 'Perm', location: '', status: 'Open', idNo: '9502275950083', phone: '813332394', dependents: '27/02/1995', birthdate: '', doe: '1706824180', taxNumber: '', email: 'Capitec 1696125500', bankDetails: '', address: '', username: 'kmogane', password: '', salary: 0 }
+        ];
+        
+        // Initialize employees with default BCC Staff if empty
+        let storedEmployees = JSON.parse(localStorage.getItem('employees'));
+        let employees = (storedEmployees && storedEmployees.length > 0) ? storedEmployees : defaultBCCStaff;
+        if (!storedEmployees || storedEmployees.length === 0) {
+            localStorage.setItem('employees', JSON.stringify(employees));
+        }
+        
         let payrolls = JSON.parse(localStorage.getItem('payrolls')) || [];
         let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
         let reviews = JSON.parse(localStorage.getItem('reviews')) || [];
@@ -1157,22 +1241,25 @@
         function showAddEmployeeModal(editIndex = -1) {
             currentEmployeeEdit = editIndex;
             document.getElementById('addEmployeeModalLabel').innerHTML = editIndex === -1 ? 'Add Employee' : 'Edit Employee';
-            populateBranchSelect('empBranch');
-            populateEmployeeSelect('payEmployee');
             const e = editIndex === -1 ? {} : employees[editIndex];
             document.getElementById('empName').value = e.name || '';
+            document.getElementById('empPostLevel').value = e.postLevel || '';
             document.getElementById('empPosition').value = e.position || '';
-            document.getElementById('empBranch').value = e.branch || '';
-            document.getElementById('empEmail').value = e.email || '';
+            document.getElementById('empPermTemp').value = e.permTemp || '';
+            document.getElementById('empLocation').value = e.location || '';
+            document.getElementById('empStatus').value = e.status || 'Open';
+            document.getElementById('empIdNo').value = e.idNo || '';
             document.getElementById('empPhone').value = e.phone || '';
-            document.getElementById('empSalary').value = e.salary || '';
+            document.getElementById('empDependents').value = e.dependents || '';
+            document.getElementById('empBirthdate').value = e.birthdate || '';
+            document.getElementById('empDOE').value = e.doe || '';
+            document.getElementById('empTaxNumber').value = e.taxNumber || '';
+            document.getElementById('empEmail').value = e.email || '';
+            document.getElementById('empBank').value = e.bankDetails || '';
+            document.getElementById('empAddress').value = e.address || '';
             document.getElementById('empUsername').value = e.username || '';
             document.getElementById('empPassword').value = '';
-            document.getElementById('empTaxNumber').value = e.taxNumber || '';
-            document.getElementById('empUIF').value = e.uifNumber || '';
-            document.getElementById('empAddress').value = e.address || '';
-            document.getElementById('empBank').value = e.bankDetails || '';
-            document.getElementById('empEmergency').value = e.emergencyContact || '';
+            document.getElementById('empSalary').value = e.salary || '';
             const modal = new bootstrap.Modal(document.getElementById('addEmployeeModal'));
             modal.show();
         }
@@ -1182,18 +1269,23 @@
             const e = {
                 id: currentEmployeeEdit === -1 ? Date.now() : employees[currentEmployeeEdit].id,
                 name: document.getElementById('empName').value,
+                postLevel: document.getElementById('empPostLevel').value,
                 position: document.getElementById('empPosition').value,
-                branch: document.getElementById('empBranch').value,
-                email: document.getElementById('empEmail').value,
+                permTemp: document.getElementById('empPermTemp').value,
+                location: document.getElementById('empLocation').value,
+                status: document.getElementById('empStatus').value,
+                idNo: document.getElementById('empIdNo').value,
                 phone: document.getElementById('empPhone').value,
-                salary: parseFloat(document.getElementById('empSalary').value),
+                dependents: document.getElementById('empDependents').value,
+                birthdate: document.getElementById('empBirthdate').value,
+                doe: document.getElementById('empDOE').value,
+                taxNumber: document.getElementById('empTaxNumber').value,
+                email: document.getElementById('empEmail').value,
+                bankDetails: document.getElementById('empBank').value,
+                address: document.getElementById('empAddress').value,
                 username: document.getElementById('empUsername').value,
                 password: pwd ? hashPassword(pwd) : (currentEmployeeEdit !== -1 ? employees[currentEmployeeEdit].password : hashPassword('default123')),
-                taxNumber: document.getElementById('empTaxNumber').value,
-                uifNumber: document.getElementById('empUIF').value,
-                address: document.getElementById('empAddress').value,
-                bankDetails: document.getElementById('empBank').value,
-                emergencyContact: document.getElementById('empEmergency').value,
+                salary: parseFloat(document.getElementById('empSalary').value) || 0,
                 enrolledBenefits: currentEmployeeEdit === -1 ? [] : employees[currentEmployeeEdit].enrolledBenefits || [],
                 enrolledCourses: currentEmployeeEdit === -1 ? [] : employees[currentEmployeeEdit].enrolledCourses || [],
                 wellness: currentEmployeeEdit === -1 ? { score: 0, surveys: [], goals: [], metrics: { stress: 5, energy: 5, mood: 5 } } : employees[currentEmployeeEdit].wellness,
@@ -1215,17 +1307,25 @@
         function renderEmployees() {
             document.getElementById('employeeTable').innerHTML = employees.map((e, i) => `
                 <tr>
-                    <td>${e.id}</td>
-                    <td>${e.name}</td>
-                    <td>${e.position}</td>
-                    <td>${e.branch}</td>
-                    <td>R${e.salary.toFixed(2)}</td>
-                    <td>${e.taxNumber}</td>
-                    <td>${e.uifNumber}</td>
+                    <td>${e.name || ''}</td>
+                    <td>${e.postLevel || ''}</td>
+                    <td>${e.position || ''}</td>
+                    <td>${e.permTemp || ''}</td>
+                    <td>${e.location || ''}</td>
+                    <td>${e.status || 'Open'}</td>
+                    <td>${e.idNo || ''}</td>
+                    <td>${e.phone || ''}</td>
+                    <td>${e.dependents || ''}</td>
+                    <td>${e.birthdate || ''}</td>
+                    <td>${e.doe || ''}</td>
+                    <td>${e.taxNumber || ''}</td>
+                    <td>${e.email || ''}</td>
+                    <td>${e.bankDetails || ''}</td>
+                    <td>${e.address || ''}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="showAddEmployeeModal(${i})">Edit</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteEmployee(${i})">Delete</button>
-                        <button class="btn btn-sm btn-info" onclick="showSendMessageModal(${i})">Send Message</button>
+                        <button class="btn btn-sm btn-info" onclick="showSendMessageModal(${i})">Message</button>
                     </td>
                 </tr>
             `).join('');
@@ -2084,14 +2184,14 @@
             const userIndex = currentUser.index;
             const emp = employees[userIndex];
             document.getElementById('profileName').textContent = emp.name;
-            document.getElementById('profileEmail').textContent = emp.email;
-            document.getElementById('profilePhone').textContent = emp.phone;
-            document.getElementById('profileSalary').textContent = `R${emp.salary.toFixed(2)}`;
-            document.getElementById('profileTax').textContent = emp.taxNumber;
-            document.getElementById('profileUIF').textContent = emp.uifNumber || '-';
+            document.getElementById('profileEmail').textContent = emp.email || '-';
+            document.getElementById('profilePhone').textContent = emp.phone || '-';
+            document.getElementById('profileSalary').textContent = emp.salary ? `R${emp.salary.toFixed(2)}` : '-';
+            document.getElementById('profileTax').textContent = emp.taxNumber || '-';
+            document.getElementById('profileUIF').textContent = emp.idNo || '-';
             document.getElementById('profileAddress').textContent = emp.address || '-';
             document.getElementById('profileBank').textContent = emp.bankDetails || '-';
-            document.getElementById('profileEmergency').textContent = emp.emergencyContact || '-';
+            document.getElementById('profileEmergency').textContent = emp.position || '-';
             document.getElementById('profilePic').src = emp.profilePic || 'https://placehold.co/150x150';
             const benList = document.getElementById('profileBenefits');
             benList.innerHTML = emp.enrolledBenefits?.map(bId => {
