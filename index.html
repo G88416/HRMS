@@ -75,6 +75,40 @@
         .tax-compliance-alert { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-top: 10px; }
         .interactive-payroll { transition: all 0.3s ease; }
         .interactive-payroll:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        /* 2025 Advanced HRMS Styles */
+        .ai-insights-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px; }
+        .quick-action-btn { transition: all 0.3s ease; border-radius: 10px; }
+        .quick-action-btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .kudos-badge { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 5px 15px; border-radius: 20px; color: white; display: inline-block; margin: 2px; }
+        .opportunity-card { border-left: 4px solid #667eea; transition: all 0.3s ease; }
+        .opportunity-card:hover { transform: translateX(5px); }
+        .learning-card { border-left: 4px solid #28a745; }
+        .deadline-alert { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); border-radius: 10px; padding: 15px; }
+        .pulse-question { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 10px; }
+        .flight-risk-high { color: #dc3545; font-weight: bold; }
+        .flight-risk-medium { color: #ffc107; font-weight: bold; }
+        .flight-risk-low { color: #28a745; font-weight: bold; }
+        .ai-chatbot { position: fixed; bottom: 20px; left: 280px; z-index: 1050; transition: left 0.3s ease; }
+        .ai-chatbot.expanded { left: 90px; }
+        .chatbot-btn { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 24px; box-shadow: 0 5px 20px rgba(102,126,234,0.4); cursor: pointer; transition: all 0.3s ease; }
+        .chatbot-btn:hover { transform: scale(1.1); }
+        .chatbot-window { position: absolute; bottom: 70px; left: 0; width: 350px; max-height: 500px; background: white; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: none; overflow: hidden; }
+        .chatbot-window.active { display: block; }
+        .chatbot-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; font-weight: 600; }
+        .chatbot-messages { height: 300px; overflow-y: auto; padding: 15px; }
+        .chatbot-message { margin-bottom: 10px; padding: 10px 15px; border-radius: 15px; max-width: 80%; }
+        .chatbot-message.bot { background: #f1f3f4; margin-right: auto; }
+        .chatbot-message.user { background: #667eea; color: white; margin-left: auto; }
+        .chatbot-input { display: flex; padding: 10px; border-top: 1px solid #eee; }
+        .chatbot-input input { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 10px 15px; margin-right: 10px; }
+        .chatbot-input button { background: #667eea; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
+        .praise-wall { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border-radius: 15px; padding: 20px; }
+        .praise-item { background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .skill-tag { background: #e9ecef; border-radius: 15px; padding: 3px 10px; margin: 2px; display: inline-block; font-size: 12px; }
+        .skill-gap { background: #fff3cd; border-radius: 15px; padding: 3px 10px; margin: 2px; display: inline-block; font-size: 12px; }
+        .checkin-btn { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border: none; color: white; padding: 10px 20px; border-radius: 25px; font-weight: 500; }
+        .metric-trend-up { color: #28a745; }
+        .metric-trend-down { color: #dc3545; }
     </style>
 </head>
 <body>
@@ -153,33 +187,269 @@
             </ul>
         </div>
         <div class="content">
-            <!-- Dashboard (HR Analytics) -->
+            <!-- HR Analytics Dashboard - Enhanced with AI Insights -->
             <section id="dashboard" class="section">
-                <h2>HR Analytics Dashboard</h2>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-chart-pie me-2"></i>HR Analytics Dashboard</h2>
+                    <span class="badge bg-primary fs-6" id="adminDate"></span>
+                </div>
+                
+                <!-- AI Insights Banner -->
+                <div class="ai-insights-card p-4 mb-4">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5><i class="fas fa-robot me-2"></i>AI-Powered Insights</h5>
+                            <p class="mb-0" id="aiInsightText">Analyzing workforce trends and providing actionable recommendations...</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-light btn-sm" onclick="refreshAIInsights()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh Insights
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Metrics Row 1 -->
                 <div class="row mt-4">
                     <div class="col-md-3"><div class="card card-metric p-3"><h5>Total Employees</h5><h3 id="totalEmployees">0</h3></div></div>
                     <div class="col-md-3"><div class="card card-metric p-3"><h5>Open Positions</h5><h3 id="openPositions">0</h3></div></div>
                     <div class="col-md-3"><div class="card card-metric p-3"><h5>Avg Performance</h5><h3 id="avgPerformance">0/5</h3></div></div>
                     <div class="col-md-3"><div class="card card-metric p-3"><h5>Pending Leaves</h5><h3 id="pendingLeaves">0</h3></div></div>
+                </div>
+
+                <!-- Key Metrics Row 2 -->
+                <div class="row mt-3">
                     <div class="col-md-3"><div class="card card-metric p-3 bg-primary text-white"><h5>Compliance Score</h5><h3 id="complianceScore">0%</h3></div></div>
                     <div class="col-md-3"><div class="card card-metric p-3"><h5>Expiring Certs</h5><h3 id="expiringCerts">0</h3></div></div>
                     <div class="col-md-3"><div class="card card-metric p-3"><h5>Total Payroll Cost</h5><h3 id="totalPayrollCost">R0</h3></div></div>
                     <div class="col-md-3"><div class="card card-metric p-3"><h5>Avg Salary</h5><h3 id="avgSalary">R0</h3></div></div>
                 </div>
+
+                <!-- AI Predictive Analytics Row -->
+                <div class="row mt-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-danger text-white">
+                                <i class="fas fa-user-clock me-2"></i>Flight Risk Prediction
+                            </div>
+                            <div class="card-body" id="flightRiskList">
+                                <p class="text-muted text-center">Analyzing employee retention patterns...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <i class="fas fa-chart-line me-2"></i>Talent Mobility
+                            </div>
+                            <div class="card-body" id="talentMobility">
+                                <p class="text-muted text-center">Identifying internal talent opportunities...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-info text-white">
+                                <i class="fas fa-balance-scale me-2"></i>D&I Analytics
+                            </div>
+                            <div class="card-body" id="diAnalytics">
+                                <p class="text-muted text-center">Diversity & Inclusion metrics loading...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <canvas id="dashboardChart" class="mt-4"></canvas>
             </section>
-            <!-- Enhanced Employee Dashboard -->
+            <!-- Enhanced Employee Dashboard - 2025 AI-Powered -->
             <section id="myDashboard" class="section d-none">
-                <h2>Welcome, <span id="myName"></span></h2>
-                <div class="row mt-4">
-                    <div class="col-md-3 col-sm-6 mb-3"><div class="card card-metric p-3"><h5>Recent Payslips</h5><p id="recentPayslips">No recent payslips</p></div></div>
-                    <div class="col-md-3 col-sm-6 mb-3"><div class="card card-metric p-3"><h5>Upcoming Leaves</h5><h3 id="upcomingLeaves">0</h3></div></div>
-                    <div class="col-md-3 col-sm-6 mb-3"><div class="card card-metric p-3"><h5>Performance Rating</h5><h3 id="myAvgPerformance">0/5</h3></div></div>
-                    <div class="col-md-3 col-sm-6 mb-3"><div class="card card-metric p-3"><h5>Pending Tasks</h5><h3 id="pendingTasks">0</h3></div></div>
+                <!-- Personalized Greeting -->
+                <div class="ai-insights-card p-4 mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2"><i class="fas fa-sun me-2"></i><span id="greetingText">Good morning</span>, <span id="myName"></span>! 👋</h2>
+                            <p class="mb-0 opacity-75" id="dashboardSummary">Here's your personalized overview for today</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="badge bg-light text-dark fs-6" id="currentDate"></span>
+                        </div>
+                    </div>
                 </div>
-                <div class="row mt-4">
+
+                <!-- Quick Stats Row -->
+                <div class="row mb-4">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card card-metric p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">PTO Days Left</h6>
+                                    <h3 id="ptoDaysLeft" class="mb-0">14</h3>
+                                </div>
+                                <i class="fas fa-umbrella-beach fa-2x text-primary opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card card-metric p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Performance Score</h6>
+                                    <h3 id="myAvgPerformance" class="mb-0">0/5</h3>
+                                </div>
+                                <i class="fas fa-chart-line fa-2x text-success opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card card-metric p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Kudos Received</h6>
+                                    <h3 id="kudosCount" class="mb-0">0 🎉</h3>
+                                </div>
+                                <i class="fas fa-award fa-2x text-warning opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card card-metric p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Wellness Score</h6>
+                                    <h3 id="myWellnessQuick" class="mb-0">0/10</h3>
+                                </div>
+                                <i class="fas fa-heartbeat fa-2x text-danger opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Items & Deadlines -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <i class="fas fa-tasks me-2"></i>Action Items
+                            </div>
+                            <div class="card-body" id="actionItems">
+                                <div class="deadline-alert mb-3" id="benefitsDeadline" style="display: none;">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    <strong>Benefits Enrollment:</strong> <span id="benefitsDeadlineText">2 days left</span>
+                                </div>
+                                <ul class="list-unstyled mb-0" id="actionItemsList">
+                                    <li class="mb-2"><i class="fas fa-calendar text-primary me-2"></i>Your 1:1 with <span id="oneOnOnePerson">Manager</span> is <span id="oneOnOneTime">tomorrow</span></li>
+                                    <li class="mb-2"><i class="fas fa-clipboard-check text-warning me-2"></i>Complete weekly check-in</li>
+                                    <li class="mb-2"><i class="fas fa-graduation-cap text-success me-2"></i>Continue learning path</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <i class="fas fa-lightbulb me-2"></i>AI Recommendations
+                            </div>
+                            <div class="card-body">
+                                <div class="learning-card p-3 mb-3">
+                                    <h6><i class="fas fa-book me-2"></i>Recommended Course</h6>
+                                    <p class="mb-1" id="recommendedCourse">Advanced Python for Data Engineers</p>
+                                    <small class="text-muted"><i class="fas fa-clock me-1"></i>15 min micro-learning</small>
+                                    <button class="btn btn-sm btn-success float-end" onclick="showSection('myTraining')">Start</button>
+                                </div>
+                                <div id="skillGaps">
+                                    <h6><i class="fas fa-puzzle-piece me-2"></i>Skills to Develop</h6>
+                                    <span class="skill-gap">Leadership</span>
+                                    <span class="skill-gap">Data Analysis</span>
+                                    <span class="skill-gap">Project Management</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Internal Opportunities & Kudos -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-info text-white">
+                                <i class="fas fa-door-open me-2"></i>Internal Opportunities (<span id="opportunityCount">0</span> matches)
+                            </div>
+                            <div class="card-body" id="internalOpportunities">
+                                <p class="text-muted text-center" id="noOpportunities">No matching opportunities at the moment</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="praise-wall h-100">
+                            <h5><i class="fas fa-hands-clapping me-2"></i>Recent Kudos & Recognition</h5>
+                            <div id="praiseWall">
+                                <div class="praise-item">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-star text-warning me-2"></i>
+                                        <strong id="kudosFrom">Team Member</strong>
+                                    </div>
+                                    <p class="mb-0" id="kudosMessage">Great job on the recent project!</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-dark mt-2" onclick="showGiveKudosModal()">
+                                <i class="fas fa-plus me-1"></i>Give Kudos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Pulse Check & Check-in -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-heart-pulse me-2"></i>Quick Pulse Check
+                            </div>
+                            <div class="card-body">
+                                <div class="pulse-question">
+                                    <p class="mb-2"><strong>How are you feeling about your work today?</strong></p>
+                                    <div class="d-flex justify-content-between">
+                                        <button class="btn btn-outline-danger btn-sm pulse-btn" onclick="submitPulse(1)">😞 1</button>
+                                        <button class="btn btn-outline-warning btn-sm pulse-btn" onclick="submitPulse(2)">😐 2</button>
+                                        <button class="btn btn-outline-info btn-sm pulse-btn" onclick="submitPulse(3)">🙂 3</button>
+                                        <button class="btn btn-outline-primary btn-sm pulse-btn" onclick="submitPulse(4)">😊 4</button>
+                                        <button class="btn btn-outline-success btn-sm pulse-btn" onclick="submitPulse(5)">😄 5</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-comments me-2"></i>Weekly Check-in
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small">Share your progress and blockers with your manager</p>
+                                <button class="checkin-btn w-100" onclick="showWeeklyCheckinModal()">
+                                    <i class="fas fa-clipboard-check me-2"></i>Complete Check-in
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row mb-4">
                     <div class="col-md-6"><canvas id="myPerformanceChart" height="200"></canvas></div>
                     <div class="col-md-6"><canvas id="myLeaveChart" height="200"></canvas></div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-history me-2"></i>Recent Activity
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush" id="recentActivity">
+                            <li class="list-group-item"><i class="fas fa-money-check text-primary me-2"></i><span id="recentPayslips">No recent payslips</span></li>
+                        </ul>
+                    </div>
                 </div>
             </section>
             <!-- Employees Section -->
@@ -1070,6 +1340,107 @@
             </div>
         </div>
     </div>
+    
+    <!-- AI HR Chatbot -->
+    <div class="ai-chatbot" id="aiChatbot">
+        <div class="chatbot-window" id="chatbotWindow">
+            <div class="chatbot-header">
+                <i class="fas fa-robot me-2"></i>HR AI Assistant
+                <button class="btn btn-sm btn-link text-white float-end" onclick="toggleChatbot()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chatbot-messages" id="chatbotMessages">
+                <div class="chatbot-message bot">
+                    👋 Hi! I'm your HR AI Assistant. I can help you with:
+                    <ul class="mt-2 mb-0">
+                        <li>PTO balance & leave requests</li>
+                        <li>Benefits information</li>
+                        <li>Payslip questions</li>
+                        <li>Company policies</li>
+                        <li>Training & development</li>
+                    </ul>
+                    How can I help you today?
+                </div>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="chatbotInput" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter')sendChatMessage()">
+                <button onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <button class="chatbot-btn" onclick="toggleChatbot()">
+            <i class="fas fa-robot"></i>
+        </button>
+    </div>
+
+    <!-- Give Kudos Modal -->
+    <div class="modal fade" id="giveKudosModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title"><i class="fas fa-award me-2"></i>Give Kudos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Select Colleague</label>
+                    <select id="kudosRecipient" class="form-control mb-3 emp-select"></select>
+                    <label class="form-label">Your Message</label>
+                    <textarea id="kudosMessageText" class="form-control mb-3" placeholder="What would you like to recognize them for?"></textarea>
+                    <label class="form-label">Recognition Type</label>
+                    <select id="kudosType" class="form-control mb-3">
+                        <option value="teamwork">🤝 Great Teamwork</option>
+                        <option value="innovation">💡 Innovation</option>
+                        <option value="helping">🙌 Above & Beyond</option>
+                        <option value="leadership">👑 Leadership</option>
+                        <option value="quality">⭐ Quality Work</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="sendKudos()">Send Kudos 🎉</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Check-in Modal -->
+    <div class="modal fade" id="weeklyCheckinModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                    <h5 class="modal-title"><i class="fas fa-clipboard-check me-2"></i>Weekly Check-in</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>What did you accomplish this week?</strong></label>
+                        <textarea id="checkinAccomplishments" class="form-control" rows="3" placeholder="Share your wins and completed tasks..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>What are your goals for next week?</strong></label>
+                        <textarea id="checkinGoals" class="form-control" rows="3" placeholder="What do you plan to achieve?"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Any blockers or challenges?</strong></label>
+                        <textarea id="checkinBlockers" class="form-control" rows="2" placeholder="What's holding you back?"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>How would you rate your work-life balance this week?</strong></label>
+                        <input type="range" class="form-range" min="1" max="5" id="checkinWLB" value="3">
+                        <div class="d-flex justify-content-between">
+                            <span>Poor</span>
+                            <span>Excellent</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="submitWeeklyCheckin()">Submit Check-in</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <script>
@@ -1142,6 +1513,12 @@
         let currentClaimEdit = -1;
         let messages = JSON.parse(localStorage.getItem('messages')) || [];
         let currentMessageEmpIndex = -1;
+        
+        // 2025 Advanced HRMS - New Data Structures
+        let kudos = JSON.parse(localStorage.getItem('kudos')) || [];
+        let pulseResponses = JSON.parse(localStorage.getItem('pulseResponses')) || [];
+        let weeklyCheckins = JSON.parse(localStorage.getItem('weeklyCheckins')) || [];
+        let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
 
         function hashPassword(pwd) {
             return CryptoJS.SHA256(pwd).toString();
@@ -1245,6 +1622,8 @@
             sidebar.classList.toggle('collapsed');
             document.querySelector('.content').classList.toggle('expanded');
             document.querySelector('.btn-toggle-sidebar').classList.toggle('expanded');
+            // Update chatbot position
+            updateChatbotPosition();
         }
 
         function showSection(id) {
@@ -2541,6 +2920,18 @@
             document.getElementById('totalPayrollCost').textContent = `R${totalPayroll.toFixed(2)}`;
             const avgSalary = employees.length ? (employees.reduce((sum, e) => sum + e.salary, 0) / employees.length).toFixed(0) : 0;
             document.getElementById('avgSalary').textContent = `R${avgSalary}`;
+            
+            // Set current date for admin
+            const adminDateEl = document.getElementById('adminDate');
+            if (adminDateEl) {
+                adminDateEl.textContent = new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+                });
+            }
+            
+            // Render AI insights
+            refreshAIInsights();
+            
             const ctx = document.getElementById('dashboardChart').getContext('2d');
             if (dashboardChart) dashboardChart.destroy();
             dashboardChart = new Chart(ctx, {
@@ -2571,7 +2962,10 @@
             const myAvg = myReviews.length ? (myReviews.reduce((sum, r) => sum + r.score, 0) / myReviews.length).toFixed(1) : 0;
             document.getElementById('myAvgPerformance').textContent = `${myAvg}/5`;
             const myRecentP = payrolls.filter(p => p.employeeIndex === userIndex).slice(-1)[0];
-            document.getElementById('recentPayslips').textContent = myRecentP ? `Last: ${myRecentP.period} - R${myRecentP.net.toFixed(2)}` : 'No recent payslips';
+            
+            // Call enhanced dashboard rendering
+            renderEnhancedDashboard();
+            
             const perfCtx = document.getElementById('myPerformanceChart').getContext('2d');
             if (myPerformanceChart) myPerformanceChart.destroy();
             myPerformanceChart = new Chart(perfCtx, { type: 'doughnut', data: { labels: ['Performance'], datasets: [{ data: [myAvg * 20], backgroundColor: ['#4169e1'] }] } });
@@ -3369,6 +3763,426 @@
             setTimeout(() => toastContainer.remove(), 4000);
         }
         // ============ END BULK IMPORT FUNCTIONALITY ============
+
+        // ============ 2025 ADVANCED HRMS FEATURES ============
+        
+        // AI Chatbot Functions
+        function toggleChatbot() {
+            const window = document.getElementById('chatbotWindow');
+            window.classList.toggle('active');
+        }
+        
+        function sendChatMessage() {
+            const input = document.getElementById('chatbotInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            // Add user message
+            addChatMessage(message, 'user');
+            input.value = '';
+            
+            // Generate AI response
+            setTimeout(() => {
+                const response = generateAIResponse(message);
+                addChatMessage(response, 'bot');
+            }, 500);
+        }
+        
+        function addChatMessage(text, type) {
+            const container = document.getElementById('chatbotMessages');
+            const div = document.createElement('div');
+            div.className = `chatbot-message ${type}`;
+            div.innerHTML = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            
+            // Save to history
+            chatHistory.push({ text, type, timestamp: new Date().toISOString() });
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        }
+        
+        function generateAIResponse(query) {
+            const q = query.toLowerCase();
+            const emp = currentUser ? employees[currentUser.index] : null;
+            
+            // PTO/Leave related
+            if (q.includes('pto') || q.includes('leave') || q.includes('vacation') || q.includes('days off')) {
+                const myLeaves = leaves.filter(l => l.employeeIndex === currentUser?.index);
+                const approved = myLeaves.filter(l => l.status === 'Approved').length;
+                const pending = myLeaves.filter(l => l.status === 'Pending').length;
+                const ptoBalance = 14 - approved; // Assuming 14 days annual
+                return `📅 <strong>Your Leave Balance:</strong><br>
+                    • PTO Days Remaining: <strong>${ptoBalance}</strong><br>
+                    • Approved Leaves: ${approved}<br>
+                    • Pending Requests: ${pending}<br><br>
+                    Need to request time off? <a href="#leaves" onclick="showSection('leaves');toggleChatbot();">Go to Leaves</a>`;
+            }
+            
+            // Payslip/Salary related
+            if (q.includes('payslip') || q.includes('salary') || q.includes('pay') || q.includes('wage')) {
+                const myPayrolls = payrolls.filter(p => p.employeeIndex === currentUser?.index);
+                const latest = myPayrolls.slice(-1)[0];
+                if (latest) {
+                    return `💰 <strong>Your Latest Payslip:</strong><br>
+                        Period: ${latest.period}<br>
+                        Net Pay: R${latest.net.toFixed(2)}<br><br>
+                        <a href="#myPayroll" onclick="showSection('myPayroll');toggleChatbot();">View All Payslips</a>`;
+                }
+                return `💰 I don't see any payslips on record yet. Please check with HR or <a href="#myPayroll" onclick="showSection('myPayroll');toggleChatbot();">visit My Payslips</a>.`;
+            }
+            
+            // Benefits related
+            if (q.includes('benefit') || q.includes('insurance') || q.includes('health') || q.includes('pension')) {
+                const enrolledCount = emp?.enrolledBenefits?.length || 0;
+                return `🎁 <strong>Benefits Information:</strong><br>
+                    You are enrolled in ${enrolledCount} benefit plan(s).<br><br>
+                    Available plans include medical aid, pension, and more.<br>
+                    <a href="#myBenefits" onclick="showSection('myBenefits');toggleChatbot();">Manage Your Benefits</a>`;
+            }
+            
+            // Training related
+            if (q.includes('training') || q.includes('course') || q.includes('learn') || q.includes('skill')) {
+                const enrolledCourses = emp?.enrolledCourses?.length || 0;
+                return `📚 <strong>Learning & Development:</strong><br>
+                    You're enrolled in ${enrolledCourses} course(s).<br>
+                    We have ${courses.length} courses available.<br><br>
+                    <a href="#myTraining" onclick="showSection('myTraining');toggleChatbot();">Browse Training</a>`;
+            }
+            
+            // Performance related
+            if (q.includes('performance') || q.includes('review') || q.includes('rating')) {
+                const myReviews = reviews.filter(r => r.employeeIndex === currentUser?.index);
+                const avg = myReviews.length ? (myReviews.reduce((s, r) => s + r.score, 0) / myReviews.length).toFixed(1) : 'N/A';
+                return `📊 <strong>Performance Summary:</strong><br>
+                    Your average rating: ${avg}/5<br>
+                    Total reviews: ${myReviews.length}<br><br>
+                    <a href="#performance" onclick="showSection('performance');toggleChatbot();">View Performance</a>`;
+            }
+            
+            // Policy/Handbook related
+            if (q.includes('policy') || q.includes('handbook') || q.includes('rule')) {
+                return `📖 You can access the Employee Handbook for all company policies.<br><br>
+                    <a href="#handbook" onclick="showSection('handbook');toggleChatbot();">View Handbook</a>`;
+            }
+            
+            // Wellness related
+            if (q.includes('wellness') || q.includes('stress') || q.includes('mental') || q.includes('counseling')) {
+                return `🧘 <strong>Wellness Support:</strong><br>
+                    Your wellbeing matters to us! We offer:<br>
+                    • Wellness surveys & tracking<br>
+                    • Mental health resources<br>
+                    • Counseling services<br><br>
+                    <a href="#myWellness" onclick="showSection('myWellness');toggleChatbot();">Go to Wellness</a>`;
+            }
+            
+            // Default response
+            return `🤖 I understand you're asking about "${query}". Here are some things I can help with:<br><br>
+                • "How much PTO do I have?"<br>
+                • "Show my payslip"<br>
+                • "What benefits am I enrolled in?"<br>
+                • "Training courses available"<br>
+                • "My performance rating"<br>
+                • "Company policies"<br>
+                • "Wellness resources"<br><br>
+                Or contact HR directly for specific inquiries!`;
+        }
+        
+        // Kudos Functions
+        function showGiveKudosModal() {
+            populateEmployeeSelects();
+            const modal = new bootstrap.Modal(document.getElementById('giveKudosModal'));
+            modal.show();
+        }
+        
+        function sendKudos() {
+            const recipientIndex = parseInt(document.getElementById('kudosRecipient').value);
+            const message = document.getElementById('kudosMessageText').value;
+            const type = document.getElementById('kudosType').value;
+            
+            if (recipientIndex < 0 || !message) {
+                alert('Please select a recipient and enter a message');
+                return;
+            }
+            
+            const newKudos = {
+                id: Date.now(),
+                from: currentUser.index,
+                to: recipientIndex,
+                message: message,
+                type: type,
+                date: new Date().toLocaleDateString()
+            };
+            
+            kudos.push(newKudos);
+            localStorage.setItem('kudos', JSON.stringify(kudos));
+            
+            addNotification(recipientIndex, `You received kudos from ${employees[currentUser.index].name}! 🎉`);
+            
+            bootstrap.Modal.getInstance(document.getElementById('giveKudosModal')).hide();
+            renderMyDashboard();
+            alert('Kudos sent! 🎉');
+        }
+        
+        // Pulse Check Functions
+        function submitPulse(rating) {
+            const pulse = {
+                employeeIndex: currentUser.index,
+                rating: rating,
+                date: new Date().toISOString()
+            };
+            
+            pulseResponses.push(pulse);
+            localStorage.setItem('pulseResponses', JSON.stringify(pulseResponses));
+            
+            // Visual feedback
+            document.querySelectorAll('.pulse-btn').forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-secondary');
+            });
+            
+            alert(`Thanks for sharing! You rated your day ${rating}/5 😊`);
+            
+            if (rating <= 2) {
+                addNotification('admin', `Pulse alert: ${employees[currentUser.index].name} reported low mood (${rating}/5)`);
+            }
+        }
+        
+        // Weekly Check-in Functions
+        function showWeeklyCheckinModal() {
+            document.getElementById('checkinAccomplishments').value = '';
+            document.getElementById('checkinGoals').value = '';
+            document.getElementById('checkinBlockers').value = '';
+            document.getElementById('checkinWLB').value = 3;
+            const modal = new bootstrap.Modal(document.getElementById('weeklyCheckinModal'));
+            modal.show();
+        }
+        
+        function submitWeeklyCheckin() {
+            const checkin = {
+                employeeIndex: currentUser.index,
+                accomplishments: document.getElementById('checkinAccomplishments').value,
+                goals: document.getElementById('checkinGoals').value,
+                blockers: document.getElementById('checkinBlockers').value,
+                workLifeBalance: parseInt(document.getElementById('checkinWLB').value),
+                date: new Date().toISOString()
+            };
+            
+            weeklyCheckins.push(checkin);
+            localStorage.setItem('weeklyCheckins', JSON.stringify(weeklyCheckins));
+            
+            addNotification('admin', `Weekly check-in submitted by ${employees[currentUser.index].name}`);
+            
+            bootstrap.Modal.getInstance(document.getElementById('weeklyCheckinModal')).hide();
+            alert('Check-in submitted successfully! ✅');
+        }
+        
+        // AI Insights Functions
+        function refreshAIInsights() {
+            generateFlightRiskPredictions();
+            generateTalentMobility();
+            generateDIAnalytics();
+            updateAIInsightBanner();
+        }
+        
+        function generateFlightRiskPredictions() {
+            const flightRiskList = document.getElementById('flightRiskList');
+            if (!flightRiskList) return;
+            
+            // Simulate flight risk based on various factors
+            const riskAssessments = employees.slice(0, 5).map((emp, i) => {
+                const myReviews = reviews.filter(r => r.employeeIndex === i);
+                const avgScore = myReviews.length ? myReviews.reduce((s, r) => s + r.score, 0) / myReviews.length : 3;
+                const wellness = emp.wellness?.score || 5;
+                const recentPulses = pulseResponses.filter(p => p.employeeIndex === i).slice(-5);
+                const avgPulse = recentPulses.length ? recentPulses.reduce((s, p) => s + p.rating, 0) / recentPulses.length : 3;
+                
+                // Calculate risk (lower scores = higher risk)
+                let riskScore = ((5 - avgScore) * 20) + ((10 - wellness) * 5) + ((5 - avgPulse) * 15);
+                riskScore = Math.min(100, Math.max(0, riskScore));
+                
+                let riskLevel = 'Low';
+                let riskClass = 'flight-risk-low';
+                if (riskScore > 60) { riskLevel = 'High'; riskClass = 'flight-risk-high'; }
+                else if (riskScore > 30) { riskLevel = 'Medium'; riskClass = 'flight-risk-medium'; }
+                
+                return { name: emp.name, riskLevel, riskClass, riskScore };
+            }).filter(r => r.riskLevel !== 'Low').slice(0, 3);
+            
+            if (riskAssessments.length === 0) {
+                flightRiskList.innerHTML = '<p class="text-success"><i class="fas fa-check-circle me-2"></i>No high-risk employees detected</p>';
+            } else {
+                flightRiskList.innerHTML = riskAssessments.map(r => `
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                        <span>${r.name}</span>
+                        <span class="${r.riskClass}">${r.riskLevel}</span>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function generateTalentMobility() {
+            const talentMobility = document.getElementById('talentMobility');
+            if (!talentMobility) return;
+            
+            // Match employees with open positions based on skills
+            const openJobs = jobs.filter(j => j.applications.length < 3);
+            
+            if (openJobs.length === 0) {
+                talentMobility.innerHTML = '<p class="text-muted">No internal mobility opportunities at this time</p>';
+                return;
+            }
+            
+            const recommendations = openJobs.slice(0, 2).map(job => {
+                // Find top performing employees who might be good fits
+                const topPerformers = employees
+                    .map((emp, i) => {
+                        const myReviews = reviews.filter(r => r.employeeIndex === i);
+                        const avgScore = myReviews.length ? myReviews.reduce((s, r) => s + r.score, 0) / myReviews.length : 0;
+                        return { name: emp.name, avgScore, position: emp.position };
+                    })
+                    .filter(e => e.avgScore >= 3.5)
+                    .slice(0, 2);
+                
+                return { job: job.title, candidates: topPerformers };
+            });
+            
+            talentMobility.innerHTML = recommendations.map(r => `
+                <div class="mb-3">
+                    <strong>${r.job}</strong>
+                    <small class="text-muted d-block">Potential candidates:</small>
+                    ${r.candidates.map(c => `<span class="badge bg-success me-1">${c.name.split(' ')[0]}</span>`).join('')}
+                </div>
+            `).join('');
+        }
+        
+        function generateDIAnalytics() {
+            const diAnalytics = document.getElementById('diAnalytics');
+            if (!diAnalytics) return;
+            
+            // Basic D&I metrics
+            const total = employees.length;
+            const positions = {};
+            employees.forEach(e => {
+                positions[e.position] = (positions[e.position] || 0) + 1;
+            });
+            
+            diAnalytics.innerHTML = `
+                <div class="mb-2">
+                    <strong>Workforce Diversity</strong>
+                    <div class="progress mt-1" style="height: 10px;">
+                        <div class="progress-bar bg-primary" style="width: 45%"></div>
+                        <div class="progress-bar bg-info" style="width: 30%"></div>
+                        <div class="progress-bar bg-success" style="width: 25%"></div>
+                    </div>
+                    <small class="text-muted">Role distribution across organization</small>
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-primary">Educators: ${positions['Educator'] || 0}</span>
+                    <span class="badge bg-info">HOD: ${positions['HOD'] || 0}</span>
+                    <span class="badge bg-success">Admin: ${positions['Admin'] || 0}</span>
+                </div>
+            `;
+        }
+        
+        function updateAIInsightBanner() {
+            const insightText = document.getElementById('aiInsightText');
+            if (!insightText) return;
+            
+            const insights = [
+                `📊 ${employees.length} employees tracked | ${jobs.length} open positions | Avg performance: ${(reviews.reduce((s, r) => s + r.score, 0) / Math.max(reviews.length, 1)).toFixed(1)}/5`,
+                `🎯 ${leaves.filter(l => l.status === 'Pending').length} pending leave requests require attention`,
+                `💡 ${kudos.length} kudos exchanged this period - recognition culture is ${kudos.length > 5 ? 'thriving!' : 'growing!'}`,
+                `📈 Workforce wellness score: ${(employees.reduce((s, e) => s + (e.wellness?.score || 5), 0) / employees.length).toFixed(1)}/10`
+            ];
+            
+            insightText.textContent = insights[Math.floor(Math.random() * insights.length)];
+        }
+        
+        // Enhanced Employee Dashboard Rendering
+        function renderEnhancedDashboard() {
+            if (!currentUser || currentUser.role === 'admin') return;
+            
+            const emp = employees[currentUser.index];
+            const now = new Date();
+            const hour = now.getHours();
+            
+            // Set greeting based on time
+            let greeting = 'Good morning';
+            if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
+            else if (hour >= 17) greeting = 'Good evening';
+            
+            document.getElementById('greetingText').textContent = greeting;
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            });
+            
+            // Calculate PTO
+            const myLeaves = leaves.filter(l => l.employeeIndex === currentUser.index && l.status === 'Approved');
+            const ptoDaysLeft = Math.max(0, 14 - myLeaves.length);
+            document.getElementById('ptoDaysLeft').textContent = ptoDaysLeft;
+            
+            // Kudos count
+            const myKudos = kudos.filter(k => k.to === currentUser.index);
+            document.getElementById('kudosCount').textContent = `${myKudos.length} 🎉`;
+            
+            // Wellness quick
+            document.getElementById('myWellnessQuick').textContent = `${emp.wellness?.score || 5}/10`;
+            
+            // Update internal opportunities
+            const openJobs = jobs.filter(j => !j.applications.includes(currentUser.index));
+            document.getElementById('opportunityCount').textContent = openJobs.length;
+            
+            const opportunitiesContainer = document.getElementById('internalOpportunities');
+            if (openJobs.length > 0) {
+                document.getElementById('noOpportunities').style.display = 'none';
+                opportunitiesContainer.innerHTML = openJobs.slice(0, 3).map(j => `
+                    <div class="opportunity-card p-3 mb-2 border rounded">
+                        <strong>${j.title}</strong>
+                        <small class="text-muted d-block">${j.branch}</small>
+                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="applyJob(${j.id})">Apply</button>
+                    </div>
+                `).join('');
+            }
+            
+            // Update praise wall
+            if (myKudos.length > 0) {
+                const latestKudos = myKudos.slice(-1)[0];
+                document.getElementById('kudosFrom').textContent = employees[latestKudos.from]?.name || 'Team Member';
+                document.getElementById('kudosMessage').textContent = latestKudos.message;
+            }
+            
+            // Recommended course
+            const enrolledCourses = emp.enrolledCourses || [];
+            const recommendedCourse = courses.find(c => !enrolledCourses.includes(c.id));
+            if (recommendedCourse) {
+                document.getElementById('recommendedCourse').textContent = recommendedCourse.name;
+            }
+            
+            // Recent activity
+            const myPayrolls = payrolls.filter(p => p.employeeIndex === currentUser.index);
+            const recentPayslip = myPayrolls.slice(-1)[0];
+            if (recentPayslip) {
+                document.getElementById('recentPayslips').innerHTML = `Last payslip: ${recentPayslip.period} - <strong>R${recentPayslip.net.toFixed(2)}</strong>`;
+            }
+        }
+        
+        // Chatbot visibility toggle with sidebar
+        function updateChatbotPosition() {
+            const chatbot = document.getElementById('aiChatbot');
+            const sidebar = document.querySelector('.sidebar');
+            if (chatbot && sidebar) {
+                if (sidebar.classList.contains('collapsed')) {
+                    chatbot.classList.add('expanded');
+                } else {
+                    chatbot.classList.remove('expanded');
+                }
+            }
+        }
+        
+        // Override toggleSidebar to also update chatbot position
+        const originalToggleSidebar = typeof toggleSidebar !== 'undefined' ? toggleSidebar : null;
+        
+        // ============ END 2025 ADVANCED HRMS FEATURES ============
 
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('currentUser')) {
