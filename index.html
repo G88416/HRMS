@@ -186,6 +186,7 @@
             <section id="employees" class="section d-none">
                 <h2>BCC Staff Detail Information</h2>
                 <button class="btn btn-primary" onclick="showAddEmployeeModal()">Add Employee</button>
+                <button class="btn btn-success ms-2" onclick="showBulkImportModal()"><i class="fas fa-file-import me-1"></i>Bulk Import</button>
                 <div class="table-responsive mt-3">
                     <table class="table table-striped">
                         <thead>
@@ -713,6 +714,68 @@
                             </div>
                         </div>
                         <div class="modal-footer"><button class="btn btn-primary" onclick="saveEmployee()">Save</button></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Bulk Import Modal -->
+            <div class="modal fade" id="bulkImportModal">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Bulk Import Employees</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Step 1: Upload -->
+                            <div id="bulkImportStep1">
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card p-3">
+                                            <h6><i class="fas fa-download me-2"></i>Step 1: Download Template</h6>
+                                            <p class="text-muted small">Download the Excel template with the correct column headers.</p>
+                                            <button class="btn btn-outline-primary" onclick="downloadBulkImportTemplate()">
+                                                <i class="fas fa-file-excel me-1"></i>Download Template
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card p-3">
+                                            <h6><i class="fas fa-upload me-2"></i>Step 2: Upload File</h6>
+                                            <p class="text-muted small">Upload your completed Excel (.xlsx) or CSV file.</p>
+                                            <input type="file" id="bulkImportFile" class="form-control" accept=".xlsx,.xls,.csv" onchange="previewBulkImport()">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="bulkImportValidation" class="alert d-none"></div>
+                            </div>
+                            <!-- Step 2: Preview -->
+                            <div id="bulkImportStep2" style="display:none;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6><i class="fas fa-eye me-2"></i>Preview Import Data</h6>
+                                    <div>
+                                        <span class="badge bg-success me-2" id="validRowsCount">0 valid</span>
+                                        <span class="badge bg-danger" id="invalidRowsCount">0 invalid</span>
+                                    </div>
+                                </div>
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-sm table-striped">
+                                        <thead class="table-dark sticky-top">
+                                            <tr id="bulkImportPreviewHeader"></tr>
+                                        </thead>
+                                        <tbody id="bulkImportPreviewBody"></tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-3">
+                                    <button class="btn btn-secondary" onclick="resetBulkImport()"><i class="fas fa-arrow-left me-1"></i>Back</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" id="bulkImportBtn" onclick="executeBulkImport()" disabled>
+                                <i class="fas fa-check me-1"></i>Import Employees
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2917,6 +2980,273 @@
                 </tr>
             `).join('');
         }
+
+        // ============ BULK IMPORT FUNCTIONALITY ============
+        let bulkImportData = [];
+        let bulkImportValidRows = [];
+
+        function showBulkImportModal() {
+            resetBulkImport();
+            const modal = new bootstrap.Modal(document.getElementById('bulkImportModal'));
+            modal.show();
+        }
+
+        function downloadBulkImportTemplate() {
+            const templateData = [
+                {
+                    'Name and Surname': 'John Doe',
+                    'Post Level': 'P1',
+                    'Position': 'Educator',
+                    'Perm / Temp': 'Perm',
+                    'Location': 'Main Campus',
+                    'Status': 'Open',
+                    'ID No.': '9001011234567',
+                    'Cell Phone No.': '0821234567',
+                    'Dependents': '2',
+                    'Birthdate': '01/01/1990',
+                    'D.O.E': '01/06/2020',
+                    'Income Tax No.': '1234567890',
+                    'Email Address': 'john.doe@example.com',
+                    'Bank Account No.': '1234567890',
+                    'Address': '123 Main Street, City',
+                    'Username': 'johndoe',
+                    'Password': 'password123',
+                    'Salary': '25000'
+                }
+            ];
+            const ws = XLSX.utils.json_to_sheet(templateData);
+            const colWidths = [
+                { wch: 20 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 },
+                { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 },
+                { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 18 }, { wch: 30 },
+                { wch: 15 }, { wch: 15 }, { wch: 12 }
+            ];
+            ws['!cols'] = colWidths;
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Employee Template');
+            XLSX.writeFile(wb, 'employee_import_template.xlsx');
+        }
+
+        function previewBulkImport() {
+            const fileInput = document.getElementById('bulkImportFile');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const validationDiv = document.getElementById('bulkImportValidation');
+            validationDiv.className = 'alert alert-info';
+            validationDiv.classList.remove('d-none');
+            validationDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing file...';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+                    if (jsonData.length === 0) {
+                        validationDiv.className = 'alert alert-warning';
+                        validationDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>No data found in the file.';
+                        return;
+                    }
+
+                    bulkImportData = jsonData;
+                    validateAndPreviewBulkImport();
+                } catch (error) {
+                    validationDiv.className = 'alert alert-danger';
+                    validationDiv.innerHTML = '<i class="fas fa-times-circle me-2"></i>Error reading file: ' + error.message;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function validateAndPreviewBulkImport() {
+            const validationDiv = document.getElementById('bulkImportValidation');
+            const requiredFields = ['Name and Surname', 'Position', 'Email Address', 'Username', 'Password'];
+            const existingUsernames = new Set(employees.map(e => e.username?.toLowerCase()).filter(Boolean));
+            const existingEmails = new Set(employees.map(e => e.email?.toLowerCase()).filter(Boolean));
+
+            bulkImportValidRows = [];
+            let validCount = 0;
+            let invalidCount = 0;
+            const errors = [];
+            const newUsernames = new Set();
+            const newEmails = new Set();
+
+            bulkImportData.forEach((row, index) => {
+                const rowErrors = [];
+                const rowNum = index + 2;
+
+                requiredFields.forEach(field => {
+                    if (!row[field] || String(row[field]).trim() === '') {
+                        rowErrors.push(`Missing ${field}`);
+                    }
+                });
+
+                const username = String(row['Username'] || '').toLowerCase().trim();
+                const email = String(row['Email Address'] || '').toLowerCase().trim();
+
+                if (username && existingUsernames.has(username)) {
+                    rowErrors.push('Username already exists');
+                }
+                if (username && newUsernames.has(username)) {
+                    rowErrors.push('Duplicate username in file');
+                }
+                if (email && existingEmails.has(email)) {
+                    rowErrors.push('Email already exists');
+                }
+                if (email && newEmails.has(email)) {
+                    rowErrors.push('Duplicate email in file');
+                }
+                if (email && !isValidEmail(email)) {
+                    rowErrors.push('Invalid email format');
+                }
+
+                if (rowErrors.length === 0) {
+                    validCount++;
+                    bulkImportValidRows.push({ row, index });
+                    newUsernames.add(username);
+                    newEmails.add(email);
+                } else {
+                    invalidCount++;
+                    errors.push(`Row ${rowNum}: ${rowErrors.join(', ')}`);
+                }
+            });
+
+            document.getElementById('validRowsCount').textContent = `${validCount} valid`;
+            document.getElementById('invalidRowsCount').textContent = `${invalidCount} invalid`;
+            document.getElementById('bulkImportBtn').disabled = validCount === 0;
+
+            if (errors.length > 0 && errors.length <= 5) {
+                validationDiv.className = 'alert alert-warning';
+                validationDiv.innerHTML = '<strong><i class="fas fa-exclamation-triangle me-2"></i>Validation Issues:</strong><ul class="mb-0 mt-2">' + 
+                    errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+            } else if (errors.length > 5) {
+                validationDiv.className = 'alert alert-warning';
+                validationDiv.innerHTML = `<strong><i class="fas fa-exclamation-triangle me-2"></i>Validation Issues:</strong><p class="mb-0 mt-2">${errors.length} rows have validation errors. Only valid rows will be imported.</p>`;
+            } else {
+                validationDiv.className = 'alert alert-success';
+                validationDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>All rows validated successfully!';
+            }
+            validationDiv.classList.remove('d-none');
+
+            renderBulkImportPreview();
+            document.getElementById('bulkImportStep1').querySelector('.row').style.display = 'none';
+            document.getElementById('bulkImportStep2').style.display = 'block';
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function renderBulkImportPreview() {
+            const headers = ['Status', 'Name and Surname', 'Position', 'Email Address', 'Cell Phone No.', 'Location', 'Username'];
+            document.getElementById('bulkImportPreviewHeader').innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+
+            const validIndices = bulkImportValidRows.map(v => v.index);
+            document.getElementById('bulkImportPreviewBody').innerHTML = bulkImportData.map((row, index) => {
+                const isValid = validIndices.includes(index);
+                const statusBadge = isValid ? 
+                    '<span class="badge bg-success"><i class="fas fa-check"></i></span>' : 
+                    '<span class="badge bg-danger"><i class="fas fa-times"></i></span>';
+                return `
+                    <tr class="${isValid ? '' : 'table-danger'}">
+                        <td>${statusBadge}</td>
+                        <td>${row['Name and Surname'] || '-'}</td>
+                        <td>${row['Position'] || '-'}</td>
+                        <td>${row['Email Address'] || '-'}</td>
+                        <td>${row['Cell Phone No.'] || '-'}</td>
+                        <td>${row['Location'] || '-'}</td>
+                        <td>${row['Username'] || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function resetBulkImport() {
+            bulkImportData = [];
+            bulkImportValidRows = [];
+            document.getElementById('bulkImportFile').value = '';
+            document.getElementById('bulkImportValidation').className = 'alert d-none';
+            document.getElementById('bulkImportStep1').querySelector('.row').style.display = 'flex';
+            document.getElementById('bulkImportStep2').style.display = 'none';
+            document.getElementById('bulkImportBtn').disabled = true;
+            document.getElementById('validRowsCount').textContent = '0 valid';
+            document.getElementById('invalidRowsCount').textContent = '0 invalid';
+        }
+
+        function executeBulkImport() {
+            if (bulkImportValidRows.length === 0) {
+                showBulkImportAlert('No valid rows to import.', 'warning');
+                return;
+            }
+
+            let importedCount = 0;
+            bulkImportValidRows.forEach(({ row }) => {
+                const passwordValue = String(row['Password'] || '').trim();
+                const newEmployee = {
+                    name: String(row['Name and Surname'] || '').trim(),
+                    postLevel: String(row['Post Level'] || '').trim(),
+                    position: String(row['Position'] || '').trim(),
+                    permTemp: String(row['Perm / Temp'] || '').trim(),
+                    location: String(row['Location'] || '').trim(),
+                    status: String(row['Status'] || 'Open').trim(),
+                    idNo: String(row['ID No.'] || '').trim(),
+                    phone: String(row['Cell Phone No.'] || '').trim(),
+                    dependents: String(row['Dependents'] || '').trim(),
+                    birthdate: String(row['Birthdate'] || '').trim(),
+                    doe: String(row['D.O.E'] || '').trim(),
+                    taxNumber: String(row['Income Tax No.'] || '').trim(),
+                    email: String(row['Email Address'] || '').trim(),
+                    bankDetails: String(row['Bank Account No.'] || '').trim(),
+                    address: String(row['Address'] || '').trim(),
+                    username: String(row['Username'] || '').trim(),
+                    password: hashPassword(passwordValue),
+                    salary: parseFloat(row['Salary']) || 0,
+                    enrolledBenefits: [],
+                    enrolledCourses: [],
+                    role: 'employee'
+                };
+                employees.push(newEmployee);
+                importedCount++;
+            });
+
+            localStorage.setItem('employees', JSON.stringify(employees));
+            logAudit('Bulk Import', `Imported ${importedCount} employees`);
+            addNotification('admin', `Bulk import completed: ${importedCount} employees added`);
+
+            bootstrap.Modal.getInstance(document.getElementById('bulkImportModal')).hide();
+            renderEmployees();
+            renderDashboard();
+            populateEmployeeSelects();
+
+            showBulkImportToast(`Successfully imported ${importedCount} employee(s)!`, 'success');
+        }
+
+        function showBulkImportAlert(message, type) {
+            const validationDiv = document.getElementById('bulkImportValidation');
+            validationDiv.className = `alert alert-${type}`;
+            validationDiv.classList.remove('d-none');
+            validationDiv.innerHTML = `<i class="fas fa-${type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}`;
+        }
+
+        function showBulkImportToast(message, type) {
+            const toastHtml = `
+                <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+                    <div class="toast show bg-${type} text-white" role="alert">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>${message}
+                        </div>
+                    </div>
+                </div>
+            `;
+            const toastContainer = document.createElement('div');
+            toastContainer.innerHTML = toastHtml;
+            document.body.appendChild(toastContainer);
+            setTimeout(() => toastContainer.remove(), 4000);
+        }
+        // ============ END BULK IMPORT FUNCTIONALITY ============
 
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('currentUser')) {
