@@ -3904,11 +3904,13 @@
         }
         
         function sendKudos() {
+            if (!currentUser || currentUser.index < 0 || currentUser.index >= employees.length) return;
+            
             const recipientIndex = parseInt(document.getElementById('kudosRecipient').value);
             const message = document.getElementById('kudosMessageText').value;
             const type = document.getElementById('kudosType').value;
             
-            if (recipientIndex < 0 || !message) {
+            if (isNaN(recipientIndex) || recipientIndex < 0 || recipientIndex >= employees.length || !message) {
                 alert('Please select a recipient and enter a message');
                 return;
             }
@@ -3935,6 +3937,8 @@
         
         // Pulse Check Functions
         function submitPulse(rating) {
+            if (!currentUser || currentUser.index < 0 || currentUser.index >= employees.length) return;
+            
             const pulse = {
                 employeeIndex: currentUser.index,
                 rating: rating,
@@ -3953,7 +3957,8 @@
             alert(`Thanks for sharing! You rated your day ${rating}/5 😊`);
             
             if (rating <= 2) {
-                addNotification('admin', `Pulse alert: ${employees[currentUser.index].name} reported low mood (${rating}/5)`);
+                const empName = employees[currentUser.index]?.name || 'An employee';
+                addNotification('admin', `Pulse alert: ${empName} reported low mood (${rating}/5)`);
             }
         }
         
@@ -3968,6 +3973,8 @@
         }
         
         function submitWeeklyCheckin() {
+            if (!currentUser || currentUser.index < 0 || currentUser.index >= employees.length) return;
+            
             const checkin = {
                 employeeIndex: currentUser.index,
                 accomplishments: document.getElementById('checkinAccomplishments').value,
@@ -3980,7 +3987,8 @@
             weeklyCheckins.push(checkin);
             localStorage.setItem('weeklyCheckins', JSON.stringify(weeklyCheckins));
             
-            addNotification('admin', `Weekly check-in submitted by ${employees[currentUser.index].name}`);
+            const empName = employees[currentUser.index]?.name || 'An employee';
+            addNotification('admin', `Weekly check-in submitted by ${empName}`);
             
             bootstrap.Modal.getInstance(document.getElementById('weeklyCheckinModal')).hide();
             alert('Check-in submitted successfully! ✅');
@@ -3999,11 +4007,12 @@
             if (!flightRiskList) return;
             
             // Simulate flight risk based on various factors
-            const riskAssessments = employees.slice(0, 5).map((emp, i) => {
-                const myReviews = reviews.filter(r => r.employeeIndex === i);
+            const riskAssessments = employees.slice(0, 5).map((emp, sliceIndex) => {
+                const actualIndex = employees.indexOf(emp);
+                const myReviews = reviews.filter(r => r.employeeIndex === actualIndex);
                 const avgScore = myReviews.length ? myReviews.reduce((s, r) => s + r.score, 0) / myReviews.length : 3;
                 const wellness = emp.wellness?.score || 5;
-                const recentPulses = pulseResponses.filter(p => p.employeeIndex === i).slice(-5);
+                const recentPulses = pulseResponses.filter(p => p.employeeIndex === actualIndex).slice(-5);
                 const avgPulse = recentPulses.length ? recentPulses.reduce((s, p) => s + p.rating, 0) / recentPulses.length : 3;
                 
                 // Calculate risk using configurable weights (lower scores = higher risk)
