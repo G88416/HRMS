@@ -1640,6 +1640,13 @@
         function populateEmployeeSelect(id) {
             document.getElementById(id).innerHTML = employees.map((e, i) => `<option value="${i}">${e.name}</option>`).join('');
         }
+        
+        function populateEmployeeSelects() {
+            // Populate all employee select dropdowns with emp-select class
+            document.querySelectorAll('.emp-select').forEach(select => {
+                select.innerHTML = employees.map((e, i) => `<option value="${i}">${e.name}</option>`).join('');
+            });
+        }
 
         function populateBranchSelect(id) {
             const branches = ['Branch1', 'Branch2']; // Define your branches
@@ -4204,9 +4211,6 @@
                 }
             }
         }
-        
-        // Override toggleSidebar to also update chatbot position
-        const originalToggleSidebar = typeof toggleSidebar !== 'undefined' ? toggleSidebar : null;
         
         // ============ END 2025 ADVANCED HRMS FEATURES ============
 
