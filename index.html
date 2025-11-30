@@ -741,8 +741,8 @@
                                     <div class="col-md-6">
                                         <div class="card p-3">
                                             <h6><i class="fas fa-upload me-2"></i>Step 2: Upload File</h6>
-                                            <p class="text-muted small">Upload your completed Excel (.xlsx) or CSV file.</p>
-                                            <input type="file" id="bulkImportFile" class="form-control" accept=".xlsx,.xls,.csv" onchange="previewBulkImport()">
+                                            <p class="text-muted small">Upload your completed employee data file.</p>
+                                            <input type="file" id="bulkImportFile" class="form-control" accept=".xlsx,.xls,.csv,.docx,.pdf" onchange="previewBulkImport()">
                                         </div>
                                     </div>
                                 </div>
@@ -3037,28 +3037,150 @@
             validationDiv.classList.remove('d-none');
             validationDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing file...';
 
+            const fileName = file.name.toLowerCase();
             const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
 
-                    if (jsonData.length === 0) {
-                        validationDiv.className = 'alert alert-warning';
-                        validationDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>No data found in the file.';
-                        return;
+            if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')) {
+                // Handle Excel and CSV files
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+                        if (jsonData.length === 0) {
+                            validationDiv.className = 'alert alert-warning';
+                            validationDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>No data found in the file.';
+                            return;
+                        }
+
+                        bulkImportData = jsonData;
+                        validateAndPreviewBulkImport();
+                    } catch (error) {
+                        validationDiv.className = 'alert alert-danger';
+                        validationDiv.innerHTML = '<i class="fas fa-times-circle me-2"></i>Error reading file: ' + error.message;
                     }
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (fileName.endsWith('.docx')) {
+                // Handle Word .docx files using mammoth.js
+                reader.onload = function(e) {
+                    mammoth.extractRawText({ arrayBuffer: e.target.result })
+                        .then(function(result) {
+                            const jsonData = parseTextToEmployeeData(result.value);
+                            if (jsonData.length === 0) {
+                                validationDiv.className = 'alert alert-warning';
+                                validationDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>No valid employee data found in the Word document.';
+                                return;
+                            }
+                            bulkImportData = jsonData;
+                            validateAndPreviewBulkImport();
+                        })
+                        .catch(function(error) {
+                            validationDiv.className = 'alert alert-danger';
+                            validationDiv.innerHTML = '<i class="fas fa-times-circle me-2"></i>Error reading Word file: ' + error.message;
+                        });
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (fileName.endsWith('.pdf')) {
+                // Handle PDF files using pdf.js
+                reader.onload = function(e) {
+                    const typedArray = new Uint8Array(e.target.result);
+                    // Configure PDF.js worker (only set if not already configured)
+                    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    }
+                    pdfjsLib.getDocument(typedArray).promise.then(function(pdf) {
+                        let textContent = '';
+                        const numPages = pdf.numPages;
+                        const pagePromises = [];
 
-                    bulkImportData = jsonData;
-                    validateAndPreviewBulkImport();
-                } catch (error) {
-                    validationDiv.className = 'alert alert-danger';
-                    validationDiv.innerHTML = '<i class="fas fa-times-circle me-2"></i>Error reading file: ' + error.message;
+                        for (let i = 1; i <= numPages; i++) {
+                            pagePromises.push(
+                                pdf.getPage(i).then(function(page) {
+                                    return page.getTextContent().then(function(content) {
+                                        return content.items.map(item => item.str).join(' ');
+                                    });
+                                })
+                            );
+                        }
+
+                        Promise.all(pagePromises).then(function(pages) {
+                            textContent = pages.join('\n');
+                            const jsonData = parseTextToEmployeeData(textContent);
+                            if (jsonData.length === 0) {
+                                validationDiv.className = 'alert alert-warning';
+                                validationDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>No valid employee data found in the PDF.';
+                                return;
+                            }
+                            bulkImportData = jsonData;
+                            validateAndPreviewBulkImport();
+                        });
+                    }).catch(function(error) {
+                        validationDiv.className = 'alert alert-danger';
+                        validationDiv.innerHTML = '<i class="fas fa-times-circle me-2"></i>Error reading PDF file: ' + error.message;
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                validationDiv.className = 'alert alert-danger';
+                validationDiv.innerHTML = '<i class="fas fa-times-circle me-2"></i>Unsupported file format.';
+            }
+        }
+
+        function parseTextToEmployeeData(text) {
+            // Parse text content from Word/PDF into employee data
+            // Expected format: each line contains comma or tab separated employee data
+            // Or a table format with headers
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            const result = [];
+
+            if (lines.length === 0) return result;
+
+            // Known header field names for exact matching
+            const knownHeaders = ['Name and Surname', 'Post Level', 'Position', 'Perm / Temp', 
+                                  'Location', 'Status', 'ID No.', 'Cell Phone No.', 'Dependents', 
+                                  'Birthdate', 'D.O.E', 'Income Tax No.', 'Email Address', 
+                                  'Bank Account No.', 'Address', 'Username', 'Password', 'Salary'];
+            const firstLine = lines[0];
+            let delimiter = '\t';
+            if (firstLine.includes(',')) delimiter = ',';
+            if (firstLine.includes('\t')) delimiter = '\t';
+
+            const firstLineParts = firstLine.split(delimiter).map(p => p.trim());
+            
+            // Check if first line contains recognized header fields (case-insensitive exact match)
+            const hasHeader = firstLineParts.some(part => 
+                knownHeaders.some(header => header.toLowerCase() === part.toLowerCase())
+            );
+
+            let headers;
+            let startIndex;
+
+            if (hasHeader) {
+                headers = firstLineParts;
+                startIndex = 1;
+            } else {
+                // Use default headers
+                headers = knownHeaders;
+                startIndex = 0;
+            }
+
+            // Minimum columns required: Name, Position, and one identifier (e.g., Email or Username)
+            const MIN_REQUIRED_COLUMNS = 3;
+            for (let i = startIndex; i < lines.length; i++) {
+                const parts = lines[i].split(delimiter).map(p => p.trim());
+                if (parts.length >= MIN_REQUIRED_COLUMNS && parts[0]) {
+                    const row = {};
+                    headers.forEach((header, idx) => {
+                        row[header] = parts[idx] || '';
+                    });
+                    result.push(row);
                 }
-            };
-            reader.readAsArrayBuffer(file);
+            }
+
+            return result;
         }
 
         function validateAndPreviewBulkImport() {
