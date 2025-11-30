@@ -1524,6 +1524,14 @@
         const ANNUAL_PTO_DAYS = 14; // Annual PTO allocation
         const FLIGHT_RISK_WEIGHTS = { performance: 20, wellness: 5, pulse: 15 }; // Flight risk calculation weights
 
+        // HTML sanitization helper to prevent XSS
+        function sanitizeHTML(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         function hashPassword(pwd) {
             return CryptoJS.SHA256(pwd).toString();
         }
@@ -4041,7 +4049,7 @@
             } else {
                 flightRiskList.innerHTML = riskAssessments.map(r => `
                     <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                        <span>${r.name}</span>
+                        <span>${sanitizeHTML(r.name)}</span>
                         <span class="${r.riskClass}">${r.riskLevel}</span>
                     </div>
                 `).join('');
@@ -4076,9 +4084,9 @@
             
             talentMobility.innerHTML = recommendations.map(r => `
                 <div class="mb-3">
-                    <strong>${r.job}</strong>
+                    <strong>${sanitizeHTML(r.job)}</strong>
                     <small class="text-muted d-block">Potential candidates:</small>
-                    ${r.candidates.map(c => `<span class="badge bg-success me-1">${c.name.split(' ')[0]}</span>`).join('')}
+                    ${r.candidates.map(c => `<span class="badge bg-success me-1">${sanitizeHTML((c.name || '').split(' ')[0])}</span>`).join('')}
                 </div>
             `).join('');
         }
@@ -4087,20 +4095,27 @@
             const diAnalytics = document.getElementById('diAnalytics');
             if (!diAnalytics) return;
             
-            // Basic D&I metrics
-            const total = employees.length;
+            // Basic D&I metrics - calculate actual distribution
+            const total = employees.length || 1;
             const positions = {};
             employees.forEach(e => {
                 positions[e.position] = (positions[e.position] || 0) + 1;
             });
             
+            // Calculate actual percentages
+            const educatorPct = Math.round(((positions['Educator'] || 0) / total) * 100);
+            const hodPct = Math.round(((positions['HOD'] || 0) / total) * 100);
+            const adminPct = Math.round(((positions['Admin'] || 0) / total) * 100);
+            const otherPct = 100 - educatorPct - hodPct - adminPct;
+            
             diAnalytics.innerHTML = `
                 <div class="mb-2">
                     <strong>Workforce Diversity</strong>
                     <div class="progress mt-1" style="height: 10px;">
-                        <div class="progress-bar bg-primary" style="width: 45%"></div>
-                        <div class="progress-bar bg-info" style="width: 30%"></div>
-                        <div class="progress-bar bg-success" style="width: 25%"></div>
+                        <div class="progress-bar bg-primary" style="width: ${educatorPct}%"></div>
+                        <div class="progress-bar bg-info" style="width: ${hodPct}%"></div>
+                        <div class="progress-bar bg-success" style="width: ${adminPct}%"></div>
+                        <div class="progress-bar bg-secondary" style="width: ${otherPct}%"></div>
                     </div>
                     <small class="text-muted">Role distribution across organization</small>
                 </div>
@@ -4170,8 +4185,8 @@
                 document.getElementById('noOpportunities').style.display = 'none';
                 opportunitiesContainer.innerHTML = openJobs.slice(0, 3).map(j => `
                     <div class="opportunity-card p-3 mb-2 border rounded">
-                        <strong>${j.title}</strong>
-                        <small class="text-muted d-block">${j.branch}</small>
+                        <strong>${sanitizeHTML(j.title)}</strong>
+                        <small class="text-muted d-block">${sanitizeHTML(j.branch)}</small>
                         <button class="btn btn-sm btn-outline-primary mt-2" onclick="applyJob(${j.id})">Apply</button>
                     </div>
                 `).join('');
