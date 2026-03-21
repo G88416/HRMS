@@ -1756,11 +1756,25 @@
             const password = document.getElementById('password').value;
             const hashedPassword = hashPassword(password);
 
-            // Try Firebase Auth first (email-based login for admin)
-            if (window.firebaseLogin && window.firebaseSyncEnabled && username.includes('@')) {
+            // Try Firebase Auth first (email-based login)
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (window.firebaseLogin && window.firebaseSyncEnabled && emailRegex.test(username)) {
                 window.firebaseLogin(username, password)
-                    .then(credential => {
-                        currentUser = { role: 'admin', uid: credential.user.uid };
+                    .then(async credential => {
+                        // Fetch role from Firestore user document; default to 'employee' if not found
+                        let role = 'employee';
+                        let employeeIndex = null;
+                        if (window.firebaseDB && window.fbFirestore) {
+                            try {
+                                const { getDoc, doc } = window.fbFirestore;
+                                const userSnap = await getDoc(doc(window.firebaseDB, 'users', credential.user.uid));
+                                if (userSnap.exists()) {
+                                    role = userSnap.data().role || 'employee';
+                                    employeeIndex = userSnap.data().employeeIndex ?? null;
+                                }
+                            } catch (_) {}
+                        }
+                        currentUser = { role, uid: credential.user.uid, ...(employeeIndex !== null && { index: employeeIndex }) };
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
                         document.getElementById('loginPage').style.display = 'none';
                         document.getElementById('appContainer').style.display = 'block';

@@ -389,7 +389,7 @@ exports.submitWellnessSurvey = functions.https.onCall(async (data, context) => {
 exports.auditEmployeeChanges = functions.firestore
     .document('employees/{employeeId}')
     .onWrite(async (change, context) => {
-        if (!change.before.exists && change.after.data()._isDefaultData) return null;
+        if (!change.before.exists && change.after.exists && change.after.data()._isDefaultData) return null;
 
         const action = !change.before.exists ? 'CREATED' :
                        !change.after.exists ? 'DELETED' : 'UPDATED';
