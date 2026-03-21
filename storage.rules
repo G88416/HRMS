@@ -1,0 +1,82 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*') &&
+             request.resource.size < 5 * 1024 * 1024;
+    }
+
+    function isValidDocument() {
+      return (request.resource.contentType.matches('application/pdf') ||
+              request.resource.contentType.matches('application/msword') ||
+              request.resource.contentType.matches('application/vnd.openxmlformats.*') ||
+              request.resource.contentType.matches('text/.*')) &&
+             request.resource.size < 20 * 1024 * 1024;
+    }
+
+    function isValidMedia() {
+      return (isValidImage() ||
+              request.resource.contentType.matches('video/.*') ||
+              request.resource.contentType.matches('audio/.*')) &&
+             request.resource.size < 100 * 1024 * 1024;
+    }
+
+    match /employees/{employeeId}/photo/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() &&
+                      (isAdmin() || request.auth.uid == employeeId) &&
+                      isValidImage();
+    }
+
+    match /employees/{employeeId}/documents/{fileName} {
+      allow read: if isAuthenticated() && (isAdmin() || request.auth.uid == employeeId);
+      allow write: if isAdmin() && isValidDocument();
+    }
+
+    match /payslips/{employeeId}/{fileName} {
+      allow read: if isAuthenticated() && (isAdmin() || request.auth.uid == employeeId);
+      allow write: if isAdmin() && isValidDocument();
+    }
+
+    match /training/{courseId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidDocument();
+    }
+
+    match /media/{mediaId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidMedia();
+    }
+
+    match /handbook/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidDocument();
+    }
+
+    match /claims/{employeeId}/{claimId}/{fileName} {
+      allow read: if isAuthenticated() && (isAdmin() || request.auth.uid == employeeId);
+      allow write: if isAuthenticated() &&
+                      (isAdmin() || request.auth.uid == employeeId) &&
+                      isValidDocument();
+    }
+
+    match /wellness/{resourceId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidMedia();
+    }
+
+    match /branding/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidImage();
+    }
+  }
+}
