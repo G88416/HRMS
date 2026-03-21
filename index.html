@@ -113,10 +113,12 @@
     <script type="module">
       import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
       import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-      import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, orderBy, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+      import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, query, orderBy, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
       import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
       import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 
+      // Replace these placeholder values with your actual Firebase project configuration
+      // Get them from: Firebase Console → Project Settings → Your Apps → Web App
       const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -126,27 +128,40 @@
         appId: "YOUR_APP_ID"
       };
 
-      window.firebaseApp = initializeApp(firebaseConfig);
-      window.firebaseAuth = getAuth(window.firebaseApp);
-      window.firebaseDB = getFirestore(window.firebaseApp);
-      window.firebaseStorage = getStorage(window.firebaseApp);
-      window.firebaseFunctions = getFunctions(window.firebaseApp);
-
-      window.fbAuth = { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword };
-      window.fbFirestore = { collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, orderBy, where };
-      window.fbStorage = { ref, uploadBytes, getDownloadURL, deleteObject };
-      window.fbFunctions = { httpsCallable };
-
-      window.firebaseSyncEnabled = true;
-
-      onAuthStateChanged(window.firebaseAuth, async (user) => {
-        if (user) {
-          window.firebaseUser = user;
-          await window.loadFirestoreData();
+      try {
+        // Only initialize if a real project ID is configured
+        if (firebaseConfig.projectId === "YOUR_PROJECT_ID") {
+          console.info('Firebase: running in offline mode (placeholder config). Replace firebaseConfig values to enable cloud sync.');
+          window.firebaseSyncEnabled = false;
         } else {
-          window.firebaseUser = null;
+          window.firebaseApp = initializeApp(firebaseConfig);
+          window.firebaseAuth = getAuth(window.firebaseApp);
+          window.firebaseDB = getFirestore(window.firebaseApp);
+          window.firebaseStorage = getStorage(window.firebaseApp);
+          window.firebaseFunctions = getFunctions(window.firebaseApp);
+
+          window.fbAuth = { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword };
+          window.fbFirestore = { collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, query, orderBy, where };
+          window.fbStorage = { ref, uploadBytes, getDownloadURL, deleteObject };
+          window.fbFunctions = { httpsCallable };
+
+          window.firebaseSyncEnabled = true;
         }
-      });
+      } catch(e) {
+        console.warn('Firebase initialization failed, running in offline mode:', e);
+        window.firebaseSyncEnabled = false;
+      }
+
+      if (window.firebaseSyncEnabled && window.firebaseAuth) {
+        onAuthStateChanged(window.firebaseAuth, async (user) => {
+          if (user) {
+            window.firebaseUser = user;
+            await window.loadFirestoreData();
+          } else {
+            window.firebaseUser = null;
+          }
+        });
+      }
 
       window.loadFirestoreData = async function() {
         if (!window.firebaseDB) return;
@@ -188,6 +203,30 @@
         } catch(e) {
           console.warn('Firestore save error:', e);
           return null;
+        }
+      };
+
+      // Batch-write an entire array to a Firestore collection (max 500 ops per batch)
+      window.batchSaveToFirestore = async function(collectionName, items) {
+        if (!window.firebaseDB || !window.firebaseSyncEnabled || !Array.isArray(items)) return;
+        const db = window.firebaseDB;
+        const { writeBatch, doc, serverTimestamp } = window.fbFirestore;
+        try {
+          const ts = serverTimestamp();
+          // Firestore batches are limited to 500 operations
+          const BATCH_SIZE = 490;
+          for (let i = 0; i < items.length; i += BATCH_SIZE) {
+            const batch = writeBatch(db);
+            const chunk = items.slice(i, i + BATCH_SIZE);
+            chunk.forEach((item, idx) => {
+              const id = item._firestoreId || item.id || (i + idx);
+              const ref = doc(db, collectionName, String(id));
+              batch.set(ref, { ...item, updatedAt: ts }, { merge: true });
+            });
+            await batch.commit();
+          }
+        } catch(e) {
+          console.warn('Firestore batch save error:', e);
         }
       };
 
@@ -1660,15 +1699,13 @@
         // Firebase persistence helper - syncs localStorage changes to Firestore
         function fbSave(key, data) {
             localStorage.setItem(key, JSON.stringify(data));
-            if (window.saveToFirestore && window.firebaseSyncEnabled) {
-                if (key === 'settings') {
+            if (window.firebaseSyncEnabled) {
+                if (key === 'settings' && window.saveToFirestore) {
                     window.saveToFirestore('settings', data, 'app');
-                } else if (Array.isArray(data)) {
-                    data.forEach((item, index) => {
-                        const id = item._firestoreId || item.id || index;
-                        window.saveToFirestore(key, item, String(id));
-                    });
+                } else if (Array.isArray(data) && window.batchSaveToFirestore) {
+                    window.batchSaveToFirestore(key, data);
                 }
+            }
             }
         }
 

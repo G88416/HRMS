@@ -138,11 +138,15 @@ exports.onLeaveSubmitted = functions.firestore
     .onCreate(async (snap, context) => {
         const leave = snap.data();
 
-        const empSnap = await db.collection('employees')
-            .where('id', '==', leave.employeeIndex + 1)
-            .limit(1)
-            .get();
-        const empName = empSnap.empty ? 'Unknown Employee' : empSnap.docs[0].data().name;
+        // Prefer stored employeeName; fall back to a Firestore lookup by employeeIndex
+        let empName = leave.employeeName || 'Unknown Employee';
+        if (!leave.employeeName && leave.employeeIndex !== undefined) {
+            const empSnap = await db.collection('employees')
+                .where('employeeIndex', '==', leave.employeeIndex)
+                .limit(1)
+                .get();
+            if (!empSnap.empty) empName = empSnap.docs[0].data().name || empName;
+        }
 
         const adminSnap = await db.collection('users')
             .where('role', '==', 'admin')
@@ -349,12 +353,24 @@ exports.submitWellnessSurvey = functions.https.onCall(async (data, context) => {
         submittedBy: context.auth.uid
     });
 
-    const empSnap = await db.collection('employees')
-        .where('id', '==', employeeIndex + 1)
-        .limit(1)
-        .get();
-    if (!empSnap.empty) {
-        await empSnap.docs[0].ref.update({ wellnessScore });
+    // Prefer stored submittedBy UID to resolve employee record directly
+    let empRef = null;
+    if (context.auth.uid) {
+        const userDoc = await db.collection('users').doc(context.auth.uid).get();
+        if (userDoc.exists && userDoc.data().employeeFirestoreId) {
+            empRef = db.collection('employees').doc(userDoc.data().employeeFirestoreId);
+        }
+    }
+    // Fall back: query by employeeIndex field stored on each employee document
+    if (!empRef && employeeIndex !== undefined) {
+        const empSnap = await db.collection('employees')
+            .where('employeeIndex', '==', employeeIndex)
+            .limit(1)
+            .get();
+        if (!empSnap.empty) empRef = empSnap.docs[0].ref;
+    }
+    if (empRef) {
+        await empRef.update({ wellnessScore });
     }
 
     if (wellnessScore < 40) {
