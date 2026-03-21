@@ -1,0 +1,186 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isEmployeeOwner(employeeId) {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeId == employeeId;
+    }
+
+    function isAdminOrEmployeeOwner(employeeId) {
+      return isAdmin() || isEmployeeOwner(employeeId);
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /payrolls/{payrollId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex
+      );
+      allow write: if isAdmin();
+    }
+
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex
+      );
+      allow write: if isAdmin();
+    }
+
+    match /attendances/{attendanceId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex
+      );
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /leaves/{leaveId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex &&
+        resource.data.status == 'Pending'
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /benefitPlans/{planId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /courses/{courseId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isAdmin();
+      allow update: if isAuthenticated();
+    }
+
+    match /certifications/{certId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /mediaContents/{mediaId} {
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.status == 'Approved');
+      allow write: if isAdmin();
+    }
+
+    match /auditLog/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /wellnessResources/{resourceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /wellnessSurveys/{surveyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /claims/{claimId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex &&
+        resource.data.status == 'Pending'
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /timeEntries/{entryId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex
+      );
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.toEmployee == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex
+      );
+      allow create: if isAdmin();
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.toEmployee == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /kudos/{kudoId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /pulseResponses/{responseId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex;
+      allow delete: if isAdmin();
+    }
+
+    match /weeklyCheckins/{checkinId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+        resource.data.employeeIndex == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.employeeIndex;
+      allow delete: if isAdmin();
+    }
+  }
+}

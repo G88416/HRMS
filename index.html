@@ -16,20 +16,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body { font-family: 'Poppins', sans-serif; font-size: 14px; background-color: #f0f8ff; color: #333; box-shadow: 0 0 20px #4169E1; }
-        .sidebar { background-color: #e6f3ff; border-right: 1px solid #87ceeb; height: 100vh; position: fixed; width: 250px; padding: 20px; overflow-y: auto; transition: width 0.3s ease; z-index: 1000; box-shadow: 0 0 20px #4169E1; }
-        .sidebar.collapsed { width: 60px; }
+        .sidebar { background-color: #e6f3ff; border-right: 1px solid #87ceeb; height: 100vh; position: fixed; left: 0; top: 0; width: 250px; padding: 20px; overflow-y: auto; transition: transform 0.3s ease; z-index: 1050; box-shadow: 5px 0 25px rgba(65,105,225,0.3); transform: translateX(0); }
+        .sidebar.collapsed { transform: translateX(-100%); }
         .sidebar.collapsed .nav-text { display: none; }
         .sidebar .nav-link { color: #001f3f; font-weight: 500; margin-bottom: 10px; padding: 10px; transition: all 0.2s; }
         .sidebar .nav-link:hover { color: #4169e1; background-color: #add8e6; border-radius: 5px; }
         .sidebar .nav-link.active { color: #4169e1; background-color: #b0e0e6; border-radius: 5px; }
-        .content { margin-left: 250px; padding: 40px; transition: margin-left 0.3s ease; background-color: #f8fbff; box-shadow: 0 0 20px #4169E1; }
-        .content.expanded { margin-left: 60px; }
+        .content { margin-left: 0; padding: 40px; padding-top: 70px; min-height: 100vh; background-color: #f8fbff; box-shadow: 0 0 20px #4169E1; }
+        .content.expanded { margin-left: 0; }
         .card-metric { background-color: #ffffff; border: 1px solid #add8e6; box-shadow: 0 4px 15px rgba(135,206,235,0.2), 0 0 10px #4169E1; border-radius: 10px; transition: transform 0.2s; }
         .card-metric:hover { transform: translateY(-5px); }
         .table { background-color: #ffffff; box-shadow: 0 2px 10px rgba(135,206,235,0.1), 0 0 10px #4169E1; border-radius: 10px; overflow: hidden; border: 1px solid #e6f3ff; }
         .modal-content { border-radius: 15px; box-shadow: 0 5px 20px rgba(65,105,225,0.2), 0 0 10px #4169E1; border: 1px solid #add8e6; }
-        .btn-toggle-sidebar { position: fixed; top: 20px; left: 260px; z-index: 1001; transition: left 0.3s ease; background-color: #4169e1; border-color: #4169e1; }
-        .btn-toggle-sidebar.expanded { left: 70px; }
+        .btn-toggle-sidebar { position: fixed; top: 15px; left: 15px; z-index: 1100; background-color: #4169e1; border-color: #4169e1; }
         #notificationBell { position: fixed; top: 20px; right: 20px; z-index: 1100; }
         .admin-only { display: block; }
         .employee-only { display: none; }
@@ -43,10 +42,8 @@
         .dark-mode .table-striped tbody tr:nth-of-type(odd) { background-color: #1a2b4a; }
         .dark-mode .table thead th { background-color: #4169e1; color: white; }
         @media (max-width: 768px) {
-            .sidebar { width: 60px; }
-            .sidebar .nav-text { display: none; }
-            .content { margin-left: 60px; }
-            .btn-toggle-sidebar { left: 70px; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.mobile-open { transform: translateX(0); }
         }
         /* Login Page Styles */
         .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #4169e1, #87ceeb); }
@@ -88,8 +85,10 @@
         .flight-risk-high { color: #dc3545; font-weight: bold; }
         .flight-risk-medium { color: #ffc107; font-weight: bold; }
         .flight-risk-low { color: #28a745; font-weight: bold; }
-        .ai-chatbot { position: fixed; bottom: 20px; left: 280px; z-index: 1050; transition: left 0.3s ease; }
-        .ai-chatbot.expanded { left: 90px; }
+        .ai-chatbot { position: fixed; bottom: 20px; left: 20px; z-index: 1050; }
+        .ai-chatbot.expanded { left: 20px; }
+        #sidebarOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1040; display: none; }
+        #sidebarOverlay.active { display: block; }
         .chatbot-btn { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 24px; box-shadow: 0 5px 20px rgba(102,126,234,0.4); cursor: pointer; transition: all 0.3s ease; }
         .chatbot-btn:hover { transform: scale(1.1); }
         .chatbot-window { position: absolute; bottom: 70px; left: 0; width: 350px; max-height: 500px; background: white; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: none; overflow: hidden; }
@@ -110,6 +109,166 @@
         .metric-trend-up { color: #28a745; }
         .metric-trend-down { color: #dc3545; }
     </style>
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+      import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+      import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, query, orderBy, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+      import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+      import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
+
+      // Replace these placeholder values with your actual Firebase project configuration
+      // Get them from: Firebase Console → Project Settings → Your Apps → Web App
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+
+      try {
+        // Only initialize if a real project ID is configured
+        if (firebaseConfig.projectId === "YOUR_PROJECT_ID") {
+          console.info('Firebase: running in offline mode (placeholder config). Replace firebaseConfig values to enable cloud sync.');
+          window.firebaseSyncEnabled = false;
+        } else {
+          window.firebaseApp = initializeApp(firebaseConfig);
+          window.firebaseAuth = getAuth(window.firebaseApp);
+          window.firebaseDB = getFirestore(window.firebaseApp);
+          window.firebaseStorage = getStorage(window.firebaseApp);
+          window.firebaseFunctions = getFunctions(window.firebaseApp);
+
+          window.fbAuth = { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword };
+          window.fbFirestore = { collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, query, orderBy, where };
+          window.fbStorage = { ref, uploadBytes, getDownloadURL, deleteObject };
+          window.fbFunctions = { httpsCallable };
+
+          window.firebaseSyncEnabled = true;
+        }
+      } catch(e) {
+        console.warn('Firebase initialization failed, running in offline mode:', e);
+        window.firebaseSyncEnabled = false;
+      }
+
+      if (window.firebaseSyncEnabled && window.firebaseAuth) {
+        onAuthStateChanged(window.firebaseAuth, async (user) => {
+          if (user) {
+            window.firebaseUser = user;
+            await window.loadFirestoreData();
+          } else {
+            window.firebaseUser = null;
+          }
+        });
+      }
+
+      window.loadFirestoreData = async function() {
+        if (!window.firebaseDB) return;
+        const db = window.firebaseDB;
+        const { getDocs, collection } = window.fbFirestore;
+        try {
+          const collections = ['employees','payrolls','jobs','reviews','attendances','leaves',
+            'benefitPlans','courses','certifications','mediaContents','auditLog','notifications',
+            'wellnessResources','wellnessSurveys','claims','timeEntries','messages','kudos',
+            'pulseResponses','weeklyCheckins'];
+          for (const col of collections) {
+            const snap = await getDocs(collection(db, col));
+            const data = [];
+            snap.forEach(d => data.push({ ...d.data(), _firestoreId: d.id }));
+            window['_fb_' + col] = data;
+          }
+          const { getDoc, doc } = window.fbFirestore;
+          const settingsSnap = await getDoc(doc(db, 'settings', 'app'));
+          if (settingsSnap.exists()) window._fb_settings = settingsSnap.data();
+        } catch(e) {
+          console.warn('Firestore load error (may be unconfigured):', e);
+          window.firebaseSyncEnabled = false;
+        }
+      };
+
+      window.saveToFirestore = async function(collectionName, data, id) {
+        if (!window.firebaseDB || !window.firebaseSyncEnabled) return null;
+        const db = window.firebaseDB;
+        const { collection, doc, setDoc, addDoc, serverTimestamp } = window.fbFirestore;
+        try {
+          const dataWithTimestamp = { ...data, updatedAt: serverTimestamp() };
+          if (id) {
+            await setDoc(doc(db, collectionName, String(id)), dataWithTimestamp, { merge: true });
+            return id;
+          } else {
+            const ref = await addDoc(collection(db, collectionName), dataWithTimestamp);
+            return ref.id;
+          }
+        } catch(e) {
+          console.warn('Firestore save error:', e);
+          return null;
+        }
+      };
+
+      // Batch-write an entire array to a Firestore collection (max 500 ops per batch)
+      window.batchSaveToFirestore = async function(collectionName, items) {
+        if (!window.firebaseDB || !window.firebaseSyncEnabled || !Array.isArray(items)) return;
+        const db = window.firebaseDB;
+        const { writeBatch, doc, serverTimestamp } = window.fbFirestore;
+        try {
+          const ts = serverTimestamp();
+          // Firestore batches are limited to 500 operations
+          const BATCH_SIZE = 490;
+          for (let i = 0; i < items.length; i += BATCH_SIZE) {
+            const batch = writeBatch(db);
+            const chunk = items.slice(i, i + BATCH_SIZE);
+            chunk.forEach((item, idx) => {
+              const id = item._firestoreId || item.id || (i + idx);
+              const ref = doc(db, collectionName, String(id));
+              batch.set(ref, { ...item, updatedAt: ts }, { merge: true });
+            });
+            await batch.commit();
+          }
+        } catch(e) {
+          console.warn('Firestore batch save error:', e);
+        }
+      };
+
+      window.deleteFromFirestore = async function(collectionName, id) {
+        if (!window.firebaseDB || !window.firebaseSyncEnabled) return;
+        const db = window.firebaseDB;
+        const { doc, deleteDoc } = window.fbFirestore;
+        try {
+          await deleteDoc(doc(db, collectionName, String(id)));
+        } catch(e) {
+          console.warn('Firestore delete error:', e);
+        }
+      };
+
+      window.uploadToFirebaseStorage = async function(path, file) {
+        if (!window.firebaseStorage || !window.firebaseSyncEnabled) return null;
+        const { ref, uploadBytes, getDownloadURL } = window.fbStorage;
+        try {
+          const storageRef = ref(window.firebaseStorage, path);
+          const snapshot = await uploadBytes(storageRef, file);
+          return await getDownloadURL(snapshot.ref);
+        } catch(e) {
+          console.warn('Storage upload error:', e);
+          return null;
+        }
+      };
+
+      window.firebaseLogin = async function(email, password) {
+        const { signInWithEmailAndPassword } = window.fbAuth;
+        return signInWithEmailAndPassword(window.firebaseAuth, email, password);
+      };
+
+      window.firebaseLogout = async function() {
+        const { signOut } = window.fbAuth;
+        return signOut(window.firebaseAuth);
+      };
+
+      window.firebaseCreateUser = async function(email, password) {
+        const { createUserWithEmailAndPassword } = window.fbAuth;
+        return createUserWithEmailAndPassword(window.firebaseAuth, email, password);
+      };
+    </script>
 </head>
 <body>
     <!-- Login Page -->
@@ -144,6 +303,7 @@
     </div>
     <!-- Main App (Hidden until login) -->
     <div class="app-container" id="appContainer" style="display:none;">
+        <div id="sidebarOverlay"></div>
         <!-- Notification Bell -->
         <div id="notificationBell">
             <button class="btn btn-primary rounded-circle shadow" style="width:50px;height:50px;" data-bs-toggle="modal" data-bs-target="#notificationsModal">
@@ -1474,7 +1634,7 @@
         let storedEmployees = JSON.parse(localStorage.getItem('employees'));
         let employees = (storedEmployees && storedEmployees.length > 0) ? storedEmployees : defaultBCCStaff;
         if (!storedEmployees || storedEmployees.length === 0) {
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
         }
         
         let payrolls = JSON.parse(localStorage.getItem('payrolls')) || [];
@@ -1536,6 +1696,31 @@
             return CryptoJS.SHA256(pwd).toString();
         }
 
+        // Firebase persistence helper - syncs localStorage changes to Firestore
+        function fbSave(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+            if (window.firebaseSyncEnabled) {
+                if (key === 'settings' && window.saveToFirestore) {
+                    window.saveToFirestore('settings', data, 'app');
+                } else if (Array.isArray(data) && window.batchSaveToFirestore) {
+                    window.batchSaveToFirestore(key, data);
+                }
+            }
+            }
+        }
+
+        function fbSaveItem(collectionName, item, id) {
+            if (window.saveToFirestore && window.firebaseSyncEnabled) {
+                window.saveToFirestore(collectionName, item, id);
+            }
+        }
+
+        function fbDeleteItem(collectionName, id) {
+            if (window.deleteFromFirestore && window.firebaseSyncEnabled) {
+                window.deleteFromFirestore(collectionName, id);
+            }
+        }
+
         function calculateAnnualPAYE(annualGross) {
             let tax = 0;
             if (annualGross > 1817000) {
@@ -1564,7 +1749,7 @@
                     e.password = hashPassword(e.password);
                 }
             });
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
             renderDashboard();
             renderMyDashboard();
             renderEmployees();
@@ -1604,9 +1789,41 @@
         }
 
         function login() {
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const hashedPassword = hashPassword(password);
+
+            // Try Firebase Auth first (email-based login)
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (window.firebaseLogin && window.firebaseSyncEnabled && emailRegex.test(username)) {
+                window.firebaseLogin(username, password)
+                    .then(async credential => {
+                        // Fetch role from Firestore user document; default to 'employee' if not found
+                        let role = 'employee';
+                        let employeeIndex = null;
+                        if (window.firebaseDB && window.fbFirestore) {
+                            try {
+                                const { getDoc, doc } = window.fbFirestore;
+                                const userSnap = await getDoc(doc(window.firebaseDB, 'users', credential.user.uid));
+                                if (userSnap.exists()) {
+                                    role = userSnap.data().role || 'employee';
+                                    employeeIndex = userSnap.data().employeeIndex ?? null;
+                                }
+                            } catch (_) {}
+                        }
+                        currentUser = { role, uid: credential.user.uid, ...(employeeIndex !== null && { index: employeeIndex }) };
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        document.getElementById('loginPage').style.display = 'none';
+                        document.getElementById('appContainer').style.display = 'block';
+                        initApp();
+                    })
+                    .catch(err => {
+                        alert('Firebase login failed: ' + err.message);
+                    });
+                return;
+            }
+
+            // Fallback: local username/password authentication
             if (username === 'admin' && hashedPassword === hashPassword('admin123')) {
                 currentUser = { role: 'admin' };
             } else {
@@ -1626,15 +1843,17 @@
 
         function logout() {
             localStorage.removeItem('currentUser');
+            if (window.firebaseLogout && window.firebaseUser) {
+                window.firebaseLogout().catch(() => {});
+            }
             location.reload();
         }
 
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
             sidebar.classList.toggle('collapsed');
-            document.querySelector('.content').classList.toggle('expanded');
-            document.querySelector('.btn-toggle-sidebar').classList.toggle('expanded');
-            // Update chatbot position
+            const overlay = document.getElementById('sidebarOverlay');
+            if (overlay) overlay.classList.toggle('active', !sidebar.classList.contains('collapsed'));
             updateChatbotPosition();
         }
 
@@ -1693,7 +1912,7 @@
                 profilePic: ''
             };
             employees.push(newEmp);
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
             addNotification('admin', `New onboarding: ${newEmp.name}`);
             bootstrap.Modal.getInstance(document.getElementById('onboardingModal')).hide();
             alert('Onboarding complete! Login with your credentials. HR will set salary.');
@@ -1759,7 +1978,7 @@
                 employees[currentEmployeeEdit] = e;
                 addNotification('admin', `Employee updated: ${e.name}`);
             }
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
             renderEmployees();
             renderDashboard();
             bootstrap.Modal.getInstance(document.getElementById('addEmployeeModal')).hide();
@@ -1796,7 +2015,7 @@
         function deleteEmployee(i) {
             if (confirm('Delete employee?')) {
                 employees.splice(i, 1);
-                localStorage.setItem('employees', JSON.stringify(employees));
+                fbSave('employees', employees);
                 renderEmployees();
                 renderDashboard();
             }
@@ -1913,7 +2132,7 @@
                 addNotification('admin', `Payroll updated for ${employees[p.employeeIndex].name}`);
                 logAudit('Payroll Updated', `Employee: ${employees[p.employeeIndex].name}, Period: ${p.period}`);
             }
-            localStorage.setItem('payrolls', JSON.stringify(payrolls));
+            fbSave('payrolls', payrolls);
             renderPayroll();
             renderDashboard();
             bootstrap.Modal.getInstance(document.getElementById('addPayrollModal')).hide();
@@ -1978,7 +2197,7 @@
                 addNotification('admin', `Batch payroll processed for ${e.name}`);
                 logAudit('Batch Payroll', `Employee: ${e.name}, Period: ${period}`);
             });
-            localStorage.setItem('payrolls', JSON.stringify(payrolls));
+            fbSave('payrolls', payrolls);
             renderPayroll();
             renderDashboard();
             document.getElementById('batchPreview').style.display = 'none';
@@ -2024,7 +2243,7 @@
         function deletePayroll(i) {
             if (confirm('Delete payroll?')) {
                 payrolls.splice(i, 1);
-                localStorage.setItem('payrolls', JSON.stringify(payrolls));
+                fbSave('payrolls', payrolls);
                 renderPayroll();
             }
         }
@@ -2108,7 +2327,7 @@
                 jobs[currentJobEdit] = j;
                 addNotification('admin', `Job updated: ${j.title}`);
             }
-            localStorage.setItem('jobs', JSON.stringify(jobs));
+            fbSave('jobs', jobs);
             renderRecruitment();
             bootstrap.Modal.getInstance(document.getElementById('addJobModal')).hide();
         }
@@ -2132,7 +2351,7 @@
         function deleteJob(i) {
             if (confirm('Delete job?')) {
                 jobs.splice(i, 1);
-                localStorage.setItem('jobs', JSON.stringify(jobs));
+                fbSave('jobs', jobs);
                 renderRecruitment();
             }
         }
@@ -2163,7 +2382,7 @@
                 reviews[currentReviewEdit] = {...reviews[currentReviewEdit], ...r};
                 addNotification('admin', `Review updated for ${employees[r.employeeIndex].name}`);
             }
-            localStorage.setItem('reviews', JSON.stringify(reviews));
+            fbSave('reviews', reviews);
             renderPerformance();
             renderDashboard();
             bootstrap.Modal.getInstance(document.getElementById('addReviewModal')).hide();
@@ -2189,7 +2408,7 @@
         function deleteReview(i) {
             if (confirm('Delete review?')) {
                 reviews.splice(i, 1);
-                localStorage.setItem('reviews', JSON.stringify(reviews));
+                fbSave('reviews', reviews);
                 renderPerformance();
                 renderDashboard();
             }
@@ -2206,7 +2425,7 @@
                 status: 'Present'
             };
             attendances.push(att);
-            localStorage.setItem('attendances', JSON.stringify(attendances));
+            fbSave('attendances', attendances);
             addNotification('admin', `${employees[empIndex]?.name || 'Unknown'} clocked in`);
             renderAttendance();
         }
@@ -2229,7 +2448,7 @@
         function deleteAttendance(i) {
             if (confirm('Delete?')) {
                 attendances.splice(i, 1);
-                localStorage.setItem('attendances', JSON.stringify(attendances));
+                fbSave('attendances', attendances);
                 renderAttendance();
             }
         }
@@ -2262,7 +2481,7 @@
                 leaves[currentLeaveEdit] = l;
                 addNotification('admin', `Leave updated for ${employees[l.employeeIndex].name}`);
             }
-            localStorage.setItem('leaves', JSON.stringify(leaves));
+            fbSave('leaves', leaves);
             renderLeaves();
             bootstrap.Modal.getInstance(document.getElementById('addLeaveModal')).hide();
         }
@@ -2296,14 +2515,14 @@
 
         function approveLeave(i) {
             leaves[i].status = 'Approved';
-            localStorage.setItem('leaves', JSON.stringify(leaves));
+            fbSave('leaves', leaves);
             renderLeaves();
             addNotification('admin', `Leave approved for ${employees[leaves[i].employeeIndex].name}`);
         }
 
         function rejectLeave(i) {
             leaves[i].status = 'Rejected';
-            localStorage.setItem('leaves', JSON.stringify(leaves));
+            fbSave('leaves', leaves);
             renderLeaves();
             addNotification(leaves[i].employeeIndex, `Your leave request was rejected`);
         }
@@ -2311,7 +2530,7 @@
         function deleteLeave(i) {
             if (confirm('Delete?')) {
                 leaves.splice(i, 1);
-                localStorage.setItem('leaves', JSON.stringify(leaves));
+                fbSave('leaves', leaves);
                 renderLeaves();
             }
         }
@@ -2341,7 +2560,7 @@
                 benefitPlans[currentBenefitEdit] = b;
                 addNotification('admin', `Benefit plan updated: ${b.name}`);
             }
-            localStorage.setItem('benefitPlans', JSON.stringify(benefitPlans));
+            fbSave('benefitPlans', benefitPlans);
             renderBenefits();
             bootstrap.Modal.getInstance(document.getElementById('addBenefitModal')).hide();
         }
@@ -2364,7 +2583,7 @@
         function deleteBenefit(i) {
             if (confirm('Delete?')) {
                 benefitPlans.splice(i, 1);
-                localStorage.setItem('benefitPlans', JSON.stringify(benefitPlans));
+                fbSave('benefitPlans', benefitPlans);
                 renderBenefits();
             }
         }
@@ -2401,7 +2620,7 @@
                 courses[currentCourseEdit] = c;
                 addNotification('admin', `Course updated: ${c.name}`);
             }
-            localStorage.setItem('courses', JSON.stringify(courses));
+            fbSave('courses', courses);
             renderTraining();
             bootstrap.Modal.getInstance(document.getElementById('addCourseModal')).hide();
         }
@@ -2423,7 +2642,7 @@
         function deleteCourse(i) {
             if (confirm('Delete?')) {
                 courses.splice(i, 1);
-                localStorage.setItem('courses', JSON.stringify(courses));
+                fbSave('courses', courses);
                 renderTraining();
             }
         }
@@ -2453,7 +2672,7 @@
                 certifications[currentCertEdit] = cert;
                 addNotification('admin', `Certification updated for ${employees[cert.employeeIndex].name}`);
             }
-            localStorage.setItem('certifications', JSON.stringify(certifications));
+            fbSave('certifications', certifications);
             renderCompliance();
             renderDashboard();
             bootstrap.Modal.getInstance(document.getElementById('addCertificationModal')).hide();
@@ -2483,7 +2702,7 @@
         function deleteCertification(i) {
             if (confirm('Delete?')) {
                 certifications.splice(i, 1);
-                localStorage.setItem('certifications', JSON.stringify(certifications));
+                fbSave('certifications', certifications);
                 renderCompliance();
                 renderDashboard();
             }
@@ -2509,13 +2728,13 @@
         function saveSettings() {
             settings.payFrequency = document.getElementById('payFrequency').value;
             settings.taxYearStart = document.getElementById('taxYearStart').value;
-            localStorage.setItem('settings', JSON.stringify(settings));
+            fbSave('settings', settings);
         }
 
         function toggleDarkMode(checked) {
             document.body.classList.toggle('dark-mode', checked);
             settings.darkMode = checked;
-            localStorage.setItem('settings', JSON.stringify(settings));
+            fbSave('settings', settings);
         }
 
         function showUploadMediaModal() {
@@ -2544,7 +2763,7 @@
                     status: 'Pending', 
                     uploader: currentUser.role === 'admin' ? 'Admin' : employees[currentUser.index].name
                 });
-                localStorage.setItem('mediaContents', JSON.stringify(mediaContents));
+                fbSave('mediaContents', mediaContents);
                 addNotification('admin', `New media uploaded: ${title} by ${mediaContents[mediaContents.length-1].uploader}`);
                 renderMediaApproval();
                 bootstrap.Modal.getInstance(document.getElementById('uploadMediaModal')).hide();
@@ -2571,14 +2790,14 @@
 
         function approveMedia(i) {
             mediaContents[i].status = 'Approved';
-            localStorage.setItem('mediaContents', JSON.stringify(mediaContents));
+            fbSave('mediaContents', mediaContents);
             addNotification(mediaContents[i].uploader === 'Admin' ? 'admin' : employees.findIndex(e => e.name === mediaContents[i].uploader), 'Your media was approved');
             renderMediaApproval();
         }
 
         function rejectMedia(i) {
             mediaContents[i].status = 'Rejected';
-            localStorage.setItem('mediaContents', JSON.stringify(mediaContents));
+            fbSave('mediaContents', mediaContents);
             addNotification(mediaContents[i].uploader === 'Admin' ? 'admin' : employees.findIndex(e => e.name === mediaContents[i].uploader), 'Your media was rejected');
             renderMediaApproval();
         }
@@ -2592,7 +2811,7 @@
                 details
             };
             auditLog.push(entry);
-            localStorage.setItem('auditLog', JSON.stringify(auditLog));
+            fbSave('auditLog', auditLog);
         }
 
         function renderAudit() {
@@ -2613,7 +2832,7 @@
                 if (!notifications.employees[target]) notifications.employees[target] = [];
                 notifications.employees[target].push({ message, read: false });
             }
-            localStorage.setItem('notifications', JSON.stringify(notifications));
+            fbSave('notifications', notifications);
             updateNotifications();
         }
 
@@ -2637,7 +2856,7 @@
             } else {
                 (notifications.employees[currentUser.index] || []).forEach(n => n.read = true);
             }
-            localStorage.setItem('notifications', JSON.stringify(notifications));
+            fbSave('notifications', notifications);
             updateNotifications();
         }
 
@@ -2690,7 +2909,7 @@
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                     const userIndex = currentUser.index;
                     employees[userIndex].profilePic = dataUrl;
-                    localStorage.setItem('employees', JSON.stringify(employees));
+                    fbSave('employees', employees);
                     renderMyProfile();
                     modal.hide();
                     cropper.destroy();
@@ -2730,7 +2949,7 @@
             employees[userIndex].address = document.getElementById('editAddress').value;
             employees[userIndex].bankDetails = document.getElementById('editBank').value;
             employees[userIndex].emergencyContact = document.getElementById('editEmergency').value;
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
             addNotification('admin', `${employees[userIndex].name} submitted profile update for approval`);
             renderMyProfile();
             bootstrap.Modal.getInstance(document.getElementById('editMyProfileModal')).hide();
@@ -2820,7 +3039,7 @@
             if (!emp.enrolledBenefits) emp.enrolledBenefits = [];
             if (!emp.enrolledBenefits.includes(id)) {
                 emp.enrolledBenefits.push(id);
-                localStorage.setItem('employees', JSON.stringify(employees));
+                fbSave('employees', employees);
                 addNotification('admin', `${emp.name} enrolled in benefit ${id}`);
                 renderMyBenefits();
                 renderMyProfile();
@@ -2830,7 +3049,7 @@
         function unenrollBenefit(id, userIndex) {
             const emp = employees[userIndex];
             emp.enrolledBenefits = emp.enrolledBenefits.filter(b => b !== id);
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
             addNotification('admin', `${emp.name} unenrolled from benefit ${id}`);
             renderMyBenefits();
             renderMyProfile();
@@ -2860,7 +3079,7 @@
             if (!emp.enrolledCourses) emp.enrolledCourses = [];
             if (!emp.enrolledCourses.includes(id)) {
                 emp.enrolledCourses.push(id);
-                localStorage.setItem('employees', JSON.stringify(employees));
+                fbSave('employees', employees);
                 addNotification('admin', `${emp.name} enrolled in course ${id}`);
                 renderMyTraining();
             }
@@ -2869,7 +3088,7 @@
         function unenrollCourse(id, userIndex) {
             const emp = employees[userIndex];
             emp.enrolledCourses = emp.enrolledCourses.filter(c => c !== id);
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
             addNotification('admin', `${emp.name} unenrolled from course ${id}`);
             renderMyTraining();
         }
@@ -2927,7 +3146,7 @@
             const job = jobs.find(j => j.id === id);
             if (job && !job.applications.includes(userIndex)) {
                 job.applications.push(userIndex);
-                localStorage.setItem('jobs', JSON.stringify(jobs));
+                fbSave('jobs', jobs);
                 addNotification('admin', `${employees[userIndex].name} applied for ${job.title}`);
                 renderOpenJobs();
             }
@@ -3094,7 +3313,7 @@
                 energy: parseInt(formData.get('q1') || 5), 
                 mood: parseInt(formData.get('q2') || 5) 
             };
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
             addNotification(userIndex, 'Wellness survey submitted! Score: ' + avg.toFixed(1));
             if (avg < 4) addNotification('admin', `${emp.name} has low wellness score (${avg.toFixed(1)}/10)`);
             bootstrap.Modal.getInstance(document.getElementById('surveyModal')).hide();
@@ -3120,7 +3339,7 @@
                 category: document.getElementById('resourceCategory').value
             };
             wellnessResources.push(resource);
-            localStorage.setItem('wellnessResources', JSON.stringify(wellnessResources));
+            fbSave('wellnessResources', wellnessResources);
             addNotification('admin', `New wellness resource added: ${resource.title}`);
             bootstrap.Modal.getInstance(document.getElementById('addResourceModal')).hide();
             renderResourcesList();
@@ -3168,7 +3387,7 @@
             };
             if (!emp.wellness) emp.wellness = { score: 0, surveys: [], goals: [], metrics: {} };
             emp.wellness.goals.push(goal);
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
             addNotification(userIndex, `New wellness goal added: ${goal.title}`);
             bootstrap.Modal.getInstance(document.getElementById('addGoalModal')).hide();
             renderMyWellness();
@@ -3223,7 +3442,7 @@
             }
             const survey = { id: Date.now(), name, desc, questions };
             wellnessSurveys.push(survey);
-            localStorage.setItem('wellnessSurveys', JSON.stringify(wellnessSurveys));
+            fbSave('wellnessSurveys', wellnessSurveys);
             addNotification('admin', `New survey created: ${name}`);
             bootstrap.Modal.getInstance(document.getElementById('addSurveyModal')).hide();
         }
@@ -3295,7 +3514,7 @@
                 claims[currentClaimEdit] = claim;
                 addNotification('admin', `Claim updated by ${employees[claim.employeeIndex].name}`);
             }
-            localStorage.setItem('claims', JSON.stringify(claims));
+            fbSave('claims', claims);
             renderMyClaims();
             bootstrap.Modal.getInstance(document.getElementById('submitClaimModal')).hide();
         }
@@ -3320,7 +3539,7 @@
         function deleteClaim(i) {
             if (confirm('Delete claim?')) {
                 claims.splice(i, 1);
-                localStorage.setItem('claims', JSON.stringify(claims));
+                fbSave('claims', claims);
                 renderMyClaims();
             }
         }
@@ -3335,7 +3554,7 @@
                 status: 'Submitted'
             };
             timeEntries.push(entry);
-            localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+            fbSave('timeEntries', timeEntries);
             addNotification('admin', `New time entry submitted by ${employees[entry.employeeIndex].name}`);
             renderMyTimeEntry();
         }
@@ -3358,7 +3577,7 @@
         function deleteTimeEntry(i) {
             if (confirm('Delete time entry?')) {
                 timeEntries.splice(i, 1);
-                localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+                fbSave('timeEntries', timeEntries);
                 renderMyTimeEntry();
             }
         }
@@ -3378,7 +3597,7 @@
                 date: new Date().toLocaleString()
             };
             messages.push(message);
-            localStorage.setItem('messages', JSON.stringify(messages));
+            fbSave('messages', messages);
             addNotification(currentMessageEmpIndex, 'New message from HR');
             bootstrap.Modal.getInstance(document.getElementById('sendMessageModal')).hide();
         }
@@ -3747,7 +3966,7 @@
                 importedCount++;
             });
 
-            localStorage.setItem('employees', JSON.stringify(employees));
+            fbSave('employees', employees);
             logAudit('Bulk Import', `Imported ${importedCount} employees`);
             addNotification('admin', `Bulk import completed: ${importedCount} employees added`);
 
@@ -3822,7 +4041,7 @@
             
             // Save to history
             chatHistory.push({ text, type, timestamp: new Date().toISOString() });
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            fbSave('chatHistory', chatHistory);
         }
         
         function generateAIResponse(query) {
@@ -3940,7 +4159,7 @@
             };
             
             kudos.push(newKudos);
-            localStorage.setItem('kudos', JSON.stringify(kudos));
+            fbSave('kudos', kudos);
             
             const senderName = employees[currentUser.index]?.name || 'A colleague';
             addNotification(recipientIndex, `You received kudos from ${senderName}! 🎉`);
@@ -3961,7 +4180,7 @@
             };
             
             pulseResponses.push(pulse);
-            localStorage.setItem('pulseResponses', JSON.stringify(pulseResponses));
+            fbSave('pulseResponses', pulseResponses);
             
             // Visual feedback
             document.querySelectorAll('.pulse-btn').forEach(btn => {
@@ -4000,7 +4219,7 @@
             };
             
             weeklyCheckins.push(checkin);
-            localStorage.setItem('weeklyCheckins', JSON.stringify(weeklyCheckins));
+            fbSave('weeklyCheckins', weeklyCheckins);
             
             const empName = employees[currentUser.index]?.name || 'An employee';
             addNotification('admin', `Weekly check-in submitted by ${empName}`);
@@ -4214,22 +4433,21 @@
             }
         }
         
-        // Chatbot visibility toggle with sidebar
+        // Chatbot position (sidebar is now overlay, chatbot stays at left: 20px)
         function updateChatbotPosition() {
-            const chatbot = document.getElementById('aiChatbot');
-            const sidebar = document.querySelector('.sidebar');
-            if (chatbot && sidebar) {
-                if (sidebar.classList.contains('collapsed')) {
-                    chatbot.classList.add('expanded');
-                } else {
-                    chatbot.classList.remove('expanded');
-                }
-            }
+            // No-op: chatbot is always at left: 20px with floating sidebar
         }
         
         // ============ END 2025 ADVANCED HRMS FEATURES ============
 
         document.addEventListener('DOMContentLoaded', () => {
+            const overlayEl = document.getElementById('sidebarOverlay');
+            if (overlayEl) {
+                overlayEl.addEventListener('click', () => {
+                    document.querySelector('.sidebar').classList.add('collapsed');
+                    overlayEl.classList.remove('active');
+                });
+            }
             if (localStorage.getItem('currentUser')) {
                 currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 document.getElementById('loginPage').style.display = 'none';
