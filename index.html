@@ -291,9 +291,11 @@
                 <button type="submit" class="btn btn-primary w-100 mb-3">
                     <i class="fas fa-sign-in-alt me-2"></i>Login
                 </button>
-                <div class="login-demo">
-                    <p class="mb-1"><strong>Admin:</strong> admin / admin123</p>
-                    <p class="mb-0"><strong>Employee:</strong> john / john123</p>
+                <div class="login-demo bg-light rounded p-2 mt-2">
+                    <p class="mb-1 text-center text-muted" style="font-size:0.8rem;">Demo Credentials</p>
+                    <p class="mb-1"><i class="fas fa-user-shield me-1 text-danger"></i><strong>Admin:</strong> admin / admin123</p>
+                    <p class="mb-0"><i class="fas fa-user me-1 text-primary"></i><strong>Employee:</strong> john / john123</p>
+                    <p class="mb-0 mt-1 text-muted" style="font-size:0.75rem;"><i class="fas fa-info-circle me-1"></i>After logging in as admin, go to <strong>User Management</strong> to change credentials.</p>
                 </div>
             </form>
             <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#onboardingModal">
@@ -337,6 +339,7 @@
                 <li class="admin-only"><a href="#audit" class="nav-link" onclick="showSection('audit')"><i class="fas fa-history me-2"></i><span class="nav-text">Payroll Audit Trail</span></a></li>
                 <li class="admin-only"><a href="#mediaApproval" class="nav-link" onclick="showSection('mediaApproval')"><i class="fas fa-check-circle me-2"></i><span class="nav-text">Media Approval</span></a></li>
                 <!-- New Wellness Links -->
+                <li class="admin-only"><a href="#userManagement" class="nav-link" onclick="showSection('userManagement')"><i class="fas fa-user-cog me-2"></i><span class="nav-text">User Management</span></a></li>
                 <li class="admin-only"><a href="#wellnessAdmin" class="nav-link" onclick="showSection('wellnessAdmin')"><i class="fas fa-heartbeat me-2"></i><span class="nav-text">Wellness Admin</span></a></li>
                 <li class="employee-only"><a href="#myWellness" class="nav-link" onclick="showSection('myWellness')"><i class="fas fa-heartbeat me-2"></i><span class="nav-text">My Wellness</span></a></li>
                 <!-- New Sage-inspired Employee Features -->
@@ -776,6 +779,37 @@
                     </select>
                     <label class="form-label mt-3">Tax Year Start</label>
                     <input type="date" id="taxYearStart" class="form-control" value="2025-03-01" onchange="saveSettings()">
+                </div>
+            </section>
+            <!-- ==== USER MANAGEMENT SECTION (Admin only) ==== -->
+            <section id="userManagement" class="section d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-user-cog me-2"></i>User Management</h2>
+                    <button class="btn btn-primary" onclick="showAddUserModal()">
+                        <i class="fas fa-user-plus me-2"></i>Add User
+                    </button>
+                </div>
+                <div id="demoCredAlert" class="alert alert-warning d-flex align-items-start gap-2">
+                    <i class="fas fa-exclamation-triangle mt-1"></i>
+                    <div>
+                        <strong>Demo Credentials Active:</strong> You are using the default admin credentials
+                        (<strong>admin / admin123</strong>). For security, click <strong>Edit</strong> on the
+                        admin account below to set your permanent username and password.
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Full Name</th>
+                                <th>Role</th>
+                                <th>Account Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userManagementTable"></tbody>
+                    </table>
                 </div>
             </section>
             <!-- Media Approval Workflow -->
@@ -1498,6 +1532,49 @@
                     </div>
                 </div>
             </div>
+            <!-- User Management Modal -->
+            <div class="modal fade" id="userModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 id="userModalLabel"><i class="fas fa-user-plus me-2"></i>Add User</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" id="userFullName" class="form-control" placeholder="Full Name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" id="userUsername" class="form-control" placeholder="username" required autocomplete="username">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" id="userPasswordLabel">Password</label>
+                                <input type="password" id="userPassword" class="form-control" placeholder="Enter password" autocomplete="new-password">
+                                <div class="form-text" id="userPasswordHelp">Enter a secure password for this user.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Confirm Password</label>
+                                <input type="password" id="userPasswordConfirm" class="form-control" placeholder="Confirm password" autocomplete="new-password">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Role</label>
+                                <select id="userRole" class="form-control">
+                                    <option value="admin">Admin</option>
+                                    <option value="employee" selected>Employee</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button class="btn btn-primary" onclick="saveUser()">
+                                <i class="fas fa-save me-1"></i>Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -1651,6 +1728,10 @@
         let wellnessResources = JSON.parse(localStorage.getItem('wellnessResources')) || [];
         let wellnessSurveys = JSON.parse(localStorage.getItem('wellnessSurveys')) || [{ name: 'Default Survey', questions: [{question: 'Stress Level?', type: 'scale'}, {question: 'Energy Level?', type: 'scale'}, {question: 'Mood?', type: 'scale'}] }];
         let settings = JSON.parse(localStorage.getItem('settings')) || { payFrequency: 'monthly', taxYearStart: '2025-03-01', darkMode: false };
+        // System users: accounts that can log in (admin(s) + any directly-created user accounts)
+        // Initialized lazily in ensureSystemUsers() to avoid CryptoJS dependency at page-load time
+        let systemUsers = JSON.parse(localStorage.getItem('systemUsers')) || [];
+        let currentSystemUserEdit = -1;
         let currentEmployeeEdit = -1;
         let currentPayrollEdit = -1;
         let currentJobEdit = -1;
@@ -1706,7 +1787,6 @@
                     window.batchSaveToFirestore(key, data);
                 }
             }
-            }
         }
 
         function fbSaveItem(collectionName, item, id) {
@@ -1744,6 +1824,7 @@
         }
 
         function initApp() {
+            ensureSystemUsers();
             employees.forEach(e => {
                 if (e.password && e.password.length < 64) {
                     e.password = hashPassword(e.password);
@@ -1776,6 +1857,7 @@
             renderMyClaims();
             renderMyTimeEntry();
             renderInbox();
+            renderUserManagement();
             updateNotifications();
             if (settings.darkMode) toggleDarkMode(true);
             if (currentUser.role === 'employee') {
@@ -1789,6 +1871,8 @@
         }
 
         function login() {
+            // Ensure system users are initialized before attempting login
+            ensureSystemUsers();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const hashedPassword = hashPassword(password);
@@ -1824,9 +1908,17 @@
             }
 
             // Fallback: local username/password authentication
-            if (username === 'admin' && hashedPassword === hashPassword('admin123')) {
-                currentUser = { role: 'admin' };
+            // Check system users (includes admin and any manually created accounts)
+            const sysUser = systemUsers.find(u => u.username === username && u.password === hashedPassword);
+            if (sysUser) {
+                if (sysUser.role === 'admin') {
+                    currentUser = { role: 'admin', userId: sysUser.id };
+                } else {
+                    const empIdx = employees.findIndex(e => e.username === username);
+                    currentUser = { role: sysUser.role, ...(empIdx !== -1 && { index: empIdx }), userId: sysUser.id };
+                }
             } else {
+                // Legacy fallback: employee accounts stored directly in employees array
                 const userIndex = employees.findIndex(e => e.username === username && e.password === hashedPassword);
                 if (userIndex !== -1) {
                     currentUser = { role: 'employee', index: userIndex };
@@ -2724,6 +2816,173 @@
             document.getElementById('taxYearStart').value = settings.taxYearStart;
             document.getElementById('darkModeSwitch').checked = settings.darkMode;
         }
+
+        // ========== USER MANAGEMENT FUNCTIONS ==========
+
+        function ensureSystemUsers() {
+            // Create default admin user if none exist (called lazily at login time)
+            if (systemUsers.length === 0) {
+                systemUsers = [
+                    {
+                        id: 'admin_default',
+                        username: 'admin',
+                        password: hashPassword('admin123'),
+                        role: 'admin',
+                        name: 'System Administrator',
+                        isDemo: true,
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                fbSave('systemUsers', systemUsers);
+            }
+        }
+
+        function renderUserManagement() {
+            ensureSystemUsers();
+            const adminUser = systemUsers.find(u => u.role === 'admin');
+            const demoAlert = document.getElementById('demoCredAlert');
+            if (demoAlert) {
+                demoAlert.style.display = (adminUser && adminUser.isDemo) ? '' : 'none';
+            }
+            const adminCount = systemUsers.filter(u => u.role === 'admin').length;
+            document.getElementById('userManagementTable').innerHTML = systemUsers.map((u, i) => `
+                <tr>
+                    <td><i class="fas fa-user me-2 text-primary"></i>${sanitizeHTML(u.username)}</td>
+                    <td>${sanitizeHTML(u.name)}</td>
+                    <td><span class="badge ${u.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${sanitizeHTML(u.role)}</span></td>
+                    <td>${u.isDemo ? '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Demo</span>' : '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Permanent</span>'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary me-1" onclick="showEditUserModal(${i})">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSystemUser(${i})"
+                            ${u.role === 'admin' && adminCount <= 1 ? 'disabled title="Cannot delete the only admin account"' : ''}>
+                            <i class="fas fa-trash me-1"></i>Delete
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showAddUserModal() {
+            currentSystemUserEdit = -1;
+            document.getElementById('userModalLabel').innerHTML = '<i class="fas fa-user-plus me-2"></i>Add User';
+            document.getElementById('userFullName').value = '';
+            document.getElementById('userUsername').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userPasswordConfirm').value = '';
+            document.getElementById('userRole').value = 'employee';
+            document.getElementById('userPasswordLabel').textContent = 'Password';
+            document.getElementById('userPasswordHelp').textContent = 'Enter a secure password (minimum 6 characters).';
+            const modal = new bootstrap.Modal(document.getElementById('userModal'));
+            modal.show();
+        }
+
+        function showEditUserModal(i) {
+            currentSystemUserEdit = i;
+            const u = systemUsers[i];
+            document.getElementById('userModalLabel').innerHTML = '<i class="fas fa-user-edit me-2"></i>Edit User';
+            document.getElementById('userFullName').value = u.name;
+            document.getElementById('userUsername').value = u.username;
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userPasswordConfirm').value = '';
+            document.getElementById('userRole').value = u.role;
+            document.getElementById('userPasswordLabel').textContent = 'New Password';
+            document.getElementById('userPasswordHelp').textContent = 'Leave blank to keep the current password.';
+            const modal = new bootstrap.Modal(document.getElementById('userModal'));
+            modal.show();
+        }
+
+        function saveUser() {
+            const name = document.getElementById('userFullName').value.trim();
+            const username = document.getElementById('userUsername').value.trim().toLowerCase();
+            const password = document.getElementById('userPassword').value;
+            const passwordConfirm = document.getElementById('userPasswordConfirm').value;
+            const role = document.getElementById('userRole').value;
+
+            if (!name || !username) {
+                alert('Full name and username are required.');
+                return;
+            }
+            if (!/^[a-z0-9._]+$/.test(username)) {
+                alert('Username may only contain lowercase letters, numbers, dots, and underscores.');
+                return;
+            }
+            // Duplicate username check (excluding current edit)
+            const duplicate = systemUsers.find((u, i) => u.username === username && i !== currentSystemUserEdit);
+            if (duplicate) {
+                alert('Username already exists. Please choose a different username.');
+                return;
+            }
+            // Password required for new users
+            if (currentSystemUserEdit === -1 && !password) {
+                alert('Password is required when creating a new user.');
+                return;
+            }
+            if (password) {
+                if (password.length < 6) {
+                    alert('Password must be at least 6 characters long.');
+                    return;
+                }
+                if (password !== passwordConfirm) {
+                    alert('Passwords do not match.');
+                    return;
+                }
+            }
+            // Ensure at least one admin remains when changing role
+            if (currentSystemUserEdit !== -1 && systemUsers[currentSystemUserEdit].role === 'admin' && role !== 'admin') {
+                const otherAdmins = systemUsers.filter((u, i) => u.role === 'admin' && i !== currentSystemUserEdit);
+                if (otherAdmins.length === 0) {
+                    alert('Cannot change role: at least one admin account must remain.');
+                    return;
+                }
+            }
+
+            if (currentSystemUserEdit === -1) {
+                systemUsers.push({
+                    id: 'user_' + Date.now(),
+                    username,
+                    password: hashPassword(password),
+                    role,
+                    name,
+                    isDemo: false,
+                    createdAt: new Date().toISOString()
+                });
+            } else {
+                const u = systemUsers[currentSystemUserEdit];
+                u.name = name;
+                u.username = username;
+                u.role = role;
+                if (password) {
+                    u.password = hashPassword(password);
+                    u.isDemo = false;
+                }
+            }
+
+            fbSave('systemUsers', systemUsers);
+            renderUserManagement();
+            bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+
+            // Notify if the current logged-in user changed their own credentials
+            if (currentSystemUserEdit !== -1 && currentUser && currentUser.userId === systemUsers[currentSystemUserEdit].id) {
+                alert('Your credentials have been updated. Please log out and sign in again with your new credentials.');
+            }
+        }
+
+        function deleteSystemUser(i) {
+            const u = systemUsers[i];
+            if (u.role === 'admin' && systemUsers.filter(x => x.role === 'admin').length <= 1) {
+                alert('Cannot delete the only admin account. Create another admin first.');
+                return;
+            }
+            if (confirm(`Delete user "${sanitizeHTML(u.username)}"? This action cannot be undone.`)) {
+                systemUsers.splice(i, 1);
+                fbSave('systemUsers', systemUsers);
+                renderUserManagement();
+            }
+        }
+
+        // ========== END USER MANAGEMENT FUNCTIONS ==========
 
         function saveSettings() {
             settings.payFrequency = document.getElementById('payFrequency').value;
