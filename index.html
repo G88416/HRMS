@@ -22,7 +22,7 @@
         .sidebar .nav-link { color: #001f3f; font-weight: 500; margin-bottom: 10px; padding: 10px; transition: all 0.2s; }
         .sidebar .nav-link:hover { color: #4169e1; background-color: #add8e6; border-radius: 5px; }
         .sidebar .nav-link.active { color: #4169e1; background-color: #b0e0e6; border-radius: 5px; }
-        .content { margin-left: 0; padding: 40px; padding-top: 70px; min-height: 100vh; background-color: #f8fbff; box-shadow: 0 0 20px #4169E1; }
+        .content { margin-left: 250px; padding: 40px; padding-top: 70px; min-height: 100vh; background-color: #f8fbff; box-shadow: 0 0 20px #4169E1; transition: margin-left 0.3s ease; }
         .content.expanded { margin-left: 0; }
         .card-metric { background-color: #ffffff; border: 1px solid #add8e6; box-shadow: 0 4px 15px rgba(135,206,235,0.2), 0 0 10px #4169E1; border-radius: 10px; transition: transform 0.2s; }
         .card-metric:hover { transform: translateY(-5px); }
@@ -44,6 +44,7 @@
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.mobile-open { transform: translateX(0); }
+            .content { margin-left: 0; }
         }
         /* Login Page Styles */
         .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #4169e1, #87ceeb); }
@@ -1944,6 +1945,8 @@
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
             sidebar.classList.toggle('collapsed');
+            const content = document.querySelector('.content');
+            if (content) content.classList.toggle('expanded', sidebar.classList.contains('collapsed'));
             const overlay = document.getElementById('sidebarOverlay');
             if (overlay) overlay.classList.toggle('active', !sidebar.classList.contains('collapsed'));
             updateChatbotPosition();
@@ -4704,6 +4707,8 @@
             if (overlayEl) {
                 overlayEl.addEventListener('click', () => {
                     document.querySelector('.sidebar').classList.add('collapsed');
+                    const content = document.querySelector('.content');
+                    if (content) content.classList.add('expanded');
                     overlayEl.classList.remove('active');
                 });
             }
